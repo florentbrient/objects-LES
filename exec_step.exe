@@ -1,0 +1,9 @@
+path=/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/
+
+#cd $path/rename_netcdf
+#./script_rename_dim Ru0x0.1.V0301.002.nc4
+
+cd /Users/florentbrient/Dropbox/GitHub/objects/script/
+python identify_downdrafts_and_updrafts.py downdraft SVT003 $path/d_test/sel_Ru0x0.1.V0301.002.nc4
+
+cd $path

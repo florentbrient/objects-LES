@@ -1,0 +1,20 @@
+batch=1 ; export batch
+path='/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/d_test/'
+var=XHAT,YHAT,ZHAT,UT,VT,WT,PABST,RVT,RCT,THT,THLM,SVT001,SVT002,SVT003
+
+for fich in $@
+do
+ echo $path$fich
+ echo "extract..."
+ ncks -O -6 -d X,1,-2 -d Y,1,-2 -d Z,1,-2 -v $var $path$fich toto.nc
+ echo "rename..."
+ ncrename -O -h -d X,W_E_direction -d Y,S_N_direction -d Z,vertical_levels -v XHAT,W_E_direction -v YHAT,S_N_direction -v ZHAT,vertical_levels toto.nc totob.nc
+ echo "modify..."
+ ncap2 -Oh -s "W_E_direction = .001*W_E_direction" -s "S_N_direction = .001*S_N_direction" -s "vertical_levels = 0.001*vertical_levels" totob.nc $path'sel_'$fich
+
+# echo "cut domain"
+# ncea -O -d W_E_direction,330,390 -d S_N_direction,140,200 toto.nc totob.nc
+# echo "extra var"
+# ncap2 -O -s 'rct_max=RCT.max($vertical_levels)' totob.nc $path'sel5_'$fich
+ rm toto*
+done
