@@ -51,7 +51,7 @@ vtype   = sys.argv[5] #V0301
 
 ##################################################
 #    Variables of interest
-vars       = ['Reflectance'] #'Reflectance','LWP','WT','THV','RNPM','THLM','DIVUV','WINDSHEAR'] #,'RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+vars       = ['THT'] #'Reflectance','LWP','WT','THV','RNPM','THLM','DIVUV','WINDSHEAR'] #,'RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
 
 #    With objects?
 objectchar = 0
