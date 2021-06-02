@@ -29,7 +29,8 @@ def savefig(fig,ax,pathfig,title='',fts=15,xsize=(4,5),zmax=None,dpi=1000,qualit
     plt.close()
 
 def opendata(data):
-    var           = data.keys()[0]
+    print(data.keys())
+    var           =  list(data.keys())[0]
     datav         = {}
     datav['Mean'] = data[var]
 
@@ -56,13 +57,13 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
     lw2     = 0.5
     fts     = 15.0
 
-    meanch    = ['Mean','Anom']
+    meanch    = ['Mean'] #['Mean','Anom']
     if len(dataobjs)==0:
       meanch.remove('Anom')
 
     case      = pathfig.split('/')[-3]
     print('case : ',case)
-  
+    #print(data)
     var,datav = opendata(data)
     nz,ny,nx  = datav[meanch[0]].shape
 
@@ -101,6 +102,8 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
     nametitle = nametitle.replace('TTTT',nameTTT)
 
     nametitle = nametitle.replace('AAAA','')
+    
+    pathfig += 'd_'+nameplot+'/'
 
     for ij,field in enumerate(meanch):
       # start figure
@@ -110,9 +113,9 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
 
       # infos for figures
       infofig   = tl.infosfigures(case,var,mtyp=field)
-      levels  = infofig['levels'] # use it?
+#      levels  = infofig['levels'] # use it?
       zminmax = infofig['zminmax']
- 
+      
       if not(var=='Frac'):
         ax.plot(datav2[field],zyx[0],color='k',linestyle=styles[1],linewidth=lw*1.5)
 
@@ -149,6 +152,7 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
           if line in zz.keys():
             ax.axhline(y=zyx[0][zz[line]], color=zzcolor[line], linewidth = 0.5, linestyle=zzplot[line])
      
+      print('zminmax ',zminmax)
       if zminmax is not None:
          ax.set_ylim(zminmax)
 
@@ -160,7 +164,6 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
       ax.get_yaxis().set_tick_params(direction='out')
       ax.get_xaxis().set_tick_params(direction='out')
       # Save figures
-      pathfig += 'd_'+nameplot+'/'
       savefig(fig,ax,pathfig,title=title,fts=fts)
 
 
@@ -219,6 +222,10 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
     if avg != 0:
      avgch = '_avg'+str(avg)
     nametitle = nametitle.replace('AAAA',avgch)
+    
+    # Save figures
+    pathfig += 'd_'+nameplot+'/'
+    tl.mkdir(pathfig)
 
     for ij,field in enumerate(meanch):
       title =  nametitle.replace('MMMM',field)
@@ -248,8 +255,8 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
       ax     = fig.add_subplot(111)
 
       #img    = plt.imread("water_worldview.jpg")
-      img    = plt.imread("dark-blue-ocean.jpg")
-      ax.imshow(img, extent=[0, max(axis[0]), 0, max(axis[1])]) #, aspect='auto')
+#      img    = plt.imread("dark-blue-ocean.jpg")
+#      ax.imshow(img, extent=[0, max(axis[0]), 0, max(axis[1])]) #, aspect='auto')
 
       xx, yy = np.meshgrid(axis[1],axis[0])
 
@@ -288,7 +295,5 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
 
       if zminmax is not None:
          ax.set_ylim(zminmax)
-      # Save figures
-      pathfig += 'd_'+nameplot+'/'
       savefig(fig,ax,pathfig,title=title,fts=fts,xsize=xsize)
 

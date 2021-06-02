@@ -1,9 +1,31 @@
+#!/bin/bash
+
+select=$1
+object=$2
+plot=$3
+
 path=/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/
+case='BOMEX' #'FIRE' #'ARMCU'
+sens='Ru0x0' #'L2RA2' #'Ls2x0' #'LNOCF' #'Ru0NC' #'Ru0x0'
 
-#cd $path/rename_netcdf
-#./script_rename_dim Ru0x0.1.V0301.002.nc4
+if [ $select = 1 ] ; then
+echo 'Running selection variables...'
+cd $path/rename_netcdf
+./script_rename_dim $case $sens
+fi
 
+if [ $object = 1 ] ; then
+echo 'Running selection objects...'
 cd /Users/florentbrient/Dropbox/GitHub/objects/script/
-python identify_downdrafts_and_updrafts.py downdraft SVT003 $path/d_test/sel_Ru0x0.1.V0301.002.nc4
+file=${path}data/${case}/${sens}/sel_${sens}.1.V0301.002.nc4
+#python identify_downdrafts_and_updrafts.py updraft SVT001 $file
+#python identify_downdrafts_and_updrafts.py downdraft SVT003 $file
+#python identify_downdrafts_and_updrafts.py updraft   SVT001+WT $file
+#python identify_downdrafts_and_updrafts.py downdraft SVT003+WT $file
+fi
 
+if [ $plot = 1 ] ; then
+echo 'Running plot...'
 cd $path
+#./run_plot_LES_3D.sh
+fi

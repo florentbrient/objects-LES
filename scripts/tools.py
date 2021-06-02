@@ -109,7 +109,9 @@ def adjust_spines(ax, spines):
     for loc, spine in ax.spines.items():
         if loc in spines:
             spine.set_position(('outward', 0))  # outward by 10 points
-            spine.set_smart_bounds(True)
+            #print(dir(spine))
+            # FB : Need to update with Python3
+            #spine.set_smart_bounds(True)
         else:
             spine.set_color('none')  # don't draw spine
 
@@ -448,7 +450,7 @@ def findhatch(objname,typ='hatch'):
 
    keys  = OrderedDict()
    keys  = ['updrSVT001WT','downSVT001WT','downSVT002WT','downSVT003WT','downSVT003','All']
-   keysd = [string.translate(maketrans('123','456')) for string in keys] #({'1': '4', '2': '5', '3': '6'}))
+   keysd = [string.translate(string.maketrans('123','456')) for string in keys] #({'1': '4', '2': '5', '3': '6'}))
 
 
    hatch={} #hatch = ['//','.','\\','+']
@@ -491,7 +493,7 @@ def cond2plot(case,prefix,boxch=False):
    try:
      xy = np.array(xycas[case][prefix])
    except:
-     print('Error in xy for ',case,prefix)
+     print('Absence in xy for ',case,prefix,' default used')
      xy = np.array(xydef)
    return boxes,xy
 
@@ -500,7 +502,7 @@ def infosfigures(cas, var, mtyp='Mean'):
    cmaps = {'Mean':'PuBu_r','Anom':'RdBu_r'} 
 
    zmin  = 0
-   zmax  = {'IHOP':2, 'FIRE':1.2, 'BOMEX':2}
+   zmax  = {'IHOP':2, 'FIRE':1.2, 'BOMEX':2, 'ARMCU':2}
 
    vrang = {}
    vrang['Mean'] = {'WT':[-5.0,5.0,0.2],

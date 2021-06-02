@@ -5,10 +5,10 @@
 # manuellement se lance >sqsub run_plot_LES_3D.sh
 
 path=/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/
-cd $path/scripts/
+cd $path'/scripts/'
 simus=(ARMCU Ru0x0 002 V0301)
 
-pathdata='../data/'
+pathdata=$path'data/'
 
 #python2.7 plot_LES_3D.py FIRE Ls2x0 024 V0301
 

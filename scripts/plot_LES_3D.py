@@ -23,11 +23,10 @@ def main(data1D,data,plots,dataobjs,xy=None,zview=[],pathfig='.',nametitle='',av
       hchcross = True
       hchzview = False
 
-      print(dataobjs.keys())
+      #print(dataobjs.keys())
       if plots['cross']:
         mf.plot2D(data1D,data,dataobjs,xy=xy,pathfig=pathfig,nametitle=nametitle,avg=avg,hatchlog=hchcross,idxzi2D=idxzi2D)
 
-      [zview.pop(zz) for zz in zview.keys() if np.isnan(zview[zz])]
       if plots['zview']:
         for zz in zview:
           mf.plot2D(data1D,data,dataobjs,zz=zview[zz],pathfig=pathfig,nametitle=nametitle+'_'+zz,avg=avg,hatchlog=hchzview)
@@ -51,7 +50,7 @@ vtype   = sys.argv[5] #V0301
 
 ##################################################
 #    Variables of interest
-vars       = ['THT'] #'Reflectance','LWP','WT','THV','RNPM','THLM','DIVUV','WINDSHEAR'] #,'RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+vars       = ['RVT'] #'Reflectance','LWP','WT','THV','RNPM','THLM','DIVUV','WINDSHEAR'] #,'RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
 
 #    With objects?
 objectchar = 0
@@ -61,7 +60,7 @@ fluxes     = 0 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':0, 'zview':1, 'mean':0}
+plots0     = {'cross':1, 'zview':0, 'mean':0}
 
 # Average over +/-xx grid points for cross section
 avg        = 0
@@ -83,18 +82,19 @@ boxes,xy  = tl.cond2plot(case,prefix,boxch=boxch)
 #path    = path0
 
 # Name
-filename= 'sel_'+sens+".1."+vtype+"."+prefix
-path    = path + case +'/' + sens+'/'
-suffixnc= '.nc4'
+filename = 'sel_'+sens+".1."+vtype+"."+prefix
+path     = path + case +'/' + sens+'/'
+suffixnc = '.nc4'
+
 ncsuff  = ['IHODC','IHOP5',]
 if sens in ncsuff:
   suffixnc= '.nc'
+
 file    = path + filename + suffixnc
-print(file)
 DATA    = nc.Dataset(file,'r')
 
 if objectchar:
-  # Objects
+  # Objects"
   thrs   = 1
   thch   = str(thrs).zfill(2)
   nbmin  = 100 #100 #1000
@@ -118,7 +118,7 @@ else:
 var1D  = ['vertical_levels','W_E_direction','S_N_direction']
 data1D = OrderedDict()
 for ij in var1D:
-  data1D[ij] = DATA[ij] #tl.removebounds(DATA[ij][:])
+  data1D[ij] = DATA[ij][:]/1000. #km #tl.removebounds(DATA[ij][:])
   #print ij,data1D[ij]
 #data1D['vertical_levels']/=1000.
 
@@ -131,7 +131,7 @@ nametitle0='TTTT_MMMM_{var}{objch}{vtypch}_{suffix}'+'AAAA' # Cross_x1_y2_Mean_V
 subcloud,cloudbase,cloudmiddle,cloudtop,zb,zi=[0 for ij in range(6)]
 zview0 = {}
 try:
-   rct  = DATA['RCT'] #tl.removebounds(DATA['RCT'])
+   rct  = DATA['RCT'][:] #tl.removebounds(DATA['RCT'])
    z    = data1D['vertical_levels']
    # Define as the first layer where RCT (ql) > epsilon (1e-6 by default)
    epsilon = 1e-6
@@ -149,13 +149,13 @@ except:
 
 # Find lcl
 #try:
-Q           = DATA['RVT'] #tl.removebounds(DATA['RVT'])
+Q           = DATA['RVT'][:] #tl.removebounds(DATA['RVT'])
 Q0          = Q[0,:,:]
-print(Q[:,0,:].shape)
-plt.contourf(z,data1D['S_N_direction'],Q[:,0,:]);plt.show()
-THT         = DATA['THT'] #tl.removebounds(DATA['THT'])
-P           = DATA['PABST'] #tl.removebounds(DATA['PABST'])
-z           = data1D['vertical_levels']*1000. # m
+#print(Q[:,0,:].shape,data1D['S_N_direction'])
+#plt.contourf(Q[:,0,:]);plt.show()
+THT         = DATA['THT'][:] #tl.removebounds(DATA['THT'])
+P           = DATA['PABST'][:] #tl.removebounds(DATA['PABST'])
+z           = data1D['vertical_levels'][:]*1000. # m
 TA          = THT*pow(100000./P,-1*CC.gammafix)
 TA0         = TA[0,:,:]
 idxlcl,lcl  = tl.findlcl(Q0,TA0,P,z)
@@ -166,12 +166,7 @@ offset      = 0.25
 THV         = tl.createnew('THV',DATA)
 #THV         = tl.removebounds(THV)
 idxzi       = tl.findTHV3D(ZZ,THV,offset)
-#plt.contourf(idxzi);plt.show()
 
-#plt.contourf(idxlcl);plt.show()
-#plt.contourf(idxlfc);plt.show()
-#plt.contourf(idxlnb);plt.show()
-#pause
 idxzi2D    = idxzi
 
 if ~np.isnan(idxlcl).all():
@@ -207,7 +202,7 @@ for typ in typs:
   nameobj   = typ+'_'+thch
   nameobjs += [nameobj] #updr_SVT001_WT_02
   try:
-    dataobj   = DATA[nameobj] #tl.removebounds(DATA[nameobj])
+    dataobj   = DATA[nameobj][:] #tl.removebounds(DATA[nameobj])
     dataobjs[nameobj],nbr  = tl.do_delete2(dataobj,tl.do_unique(deepcopy(dataobj)),nbmin,rename=True)
     #print nbr,dataobjs[nameobj].shape,np.max(dataobjs[nameobj])
     mask.append(tl.do_unique(deepcopy(dataobjs[nameobj])))
@@ -235,6 +230,7 @@ if vtype!='V0301':
 
 
 for vv in vars:
+  print('Variable ',vv)
   data      = {} ;
   if vv not in DATA.variables.keys():
      time1  = time.time()
@@ -246,7 +242,7 @@ for vv in vars:
      if objectchar and  ~fluxes and vv=='Frac':
        tmp  = np.ones(DATA['THT'].shape)
   else:
-     tmp    = DATA[vv]
+     tmp    = DATA[vv][:]
 
   data[vv]     = tmp #tl.removebounds(tmp)
   if tmp is not None:
@@ -255,18 +251,21 @@ for vv in vars:
     plots     = deepcopy(plots0)
     zview     = deepcopy(zview0)
 
-    print(vv,len(data[vv].shape))
     if len(data[vv].shape)!=3:
       plots['cross'] = 0; plots['mean'] = 0;
       if objectchar == 0:
         zview = {'lcl':idxlcl}
+    
+    # clear zview
+    zview = {k: zview[k] for k in zview if not np.isnan(zview[k])}
 
     if fluxes and len(data[vv].shape)==3:
       vv2       = fluxchar+vv
-      data[vv2] = tl.removebounds(DATA[fluxchar])*tl.anomcalc(data[vv])
+      data[vv2] = DATA[fluxchar]*tl.anomcalc(data[vv])
+      #data[vv2] = tl.removebounds(DATA[fluxchar])*tl.anomcalc(data[vv])
       data.pop(vv)
       vv        = vv2
-  
+
     nametitle = nametitle0.format(var=vv,objch=objch,vtypch=vtypch,suffix=prefix)
     main(data1D,data,plots,dataobjs,xy=xy,zview=zview,pathfig=pathfig,nametitle=nametitle,avg=avg,fluxes=fluxes,idxzi2D=idxzi2D)
 

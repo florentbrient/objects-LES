@@ -1,20 +1,34 @@
 batch=1 ; export batch
-path='/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/d_test/'
-var=XHAT,YHAT,ZHAT,UT,VT,WT,PABST,RVT,RCT,THT,THLM,SVT001,SVT002,SVT003
 
-for fich in $@
+echo $1 $2
+
+pathdata='/Volumes/TOSHIBA/'$1'/'
+
+path='/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/data/'$1'/'$2'/'
+mkdir $path
+#pathdata=$path
+
+dirlist=`find ${pathdata}${2}* -not -name '*000*' | xargs -n 1 basename`
+echo $dirlist
+
+var=XHAT,YHAT,ZHAT,UT,VT,WT,PABST,RVT,THT,THLM,RCT,SVT001,SVT002,SVT003 #,SVT004,SVT005,SVT006 #,SVT001,SVT002,SVT003
+#var=XHAT,YHAT,ZHAT,RRT,RCT
+
+for fich in $dirlist
 do
- echo $path$fich
+ echo $fich
  echo "extract..."
- ncks -O -6 -d X,1,-2 -d Y,1,-2 -d Z,1,-2 -v $var $path$fich toto.nc
+ ncks -O -6 -d X,1,-2 -d Y,1,-2 -d Z,1,-2 -v $var $pathdata$fich toto.nc
  echo "rename..."
  ncrename -O -h -d X,W_E_direction -d Y,S_N_direction -d Z,vertical_levels -v XHAT,W_E_direction -v YHAT,S_N_direction -v ZHAT,vertical_levels toto.nc totob.nc
  echo "modify..."
- ncap2 -Oh -s "W_E_direction = .001*W_E_direction" -s "S_N_direction = .001*S_N_direction" -s "vertical_levels = 0.001*vertical_levels" totob.nc $path'sel_'$fich
+ ncap2 -A totob.nc $path'sel_'$fich
+ rm toto*
+done
 
+# ncap2 -Ah -s "W_E_direction = .001*W_E_direction" -s "S_N_direction = .001*S_N_direction" -s "vertical_levels = 0.001*vertical_levels" totob.nc $path'sel_'$fich
 # echo "cut domain"
 # ncea -O -d W_E_direction,330,390 -d S_N_direction,140,200 toto.nc totob.nc
 # echo "extra var"
 # ncap2 -O -s 'rct_max=RCT.max($vertical_levels)' totob.nc $path'sel5_'$fich
- rm toto*
-done
+#done
