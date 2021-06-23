@@ -57,7 +57,7 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
     lw2     = 0.5
     fts     = 15.0
 
-    meanch    = ['Mean'] #['Mean','Anom']
+    meanch    = ['Mean','Anom']
     if len(dataobjs)==0:
       meanch.remove('Anom')
 
@@ -104,6 +104,7 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
     nametitle = nametitle.replace('AAAA','')
     
     pathfig += 'd_'+nameplot+'/'
+    tl.mkdir(pathfig)
 
     for ij,field in enumerate(meanch):
       # start figure
@@ -237,7 +238,7 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
       levels  = infofig['levels']
       if xy is not None:
         zminmax = infofig['zminmax']
-      print('levels: ',xy,levels)
+      #print('levels: ',xy,levels)
 
       # Data to plot
       datap,axis = tl.selectdata(zyx,datav[field],slct=slct,avg=avg)
@@ -250,6 +251,9 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
         ZI        = [axis[0][int(idx)] for idx in idxzi[0,:]]
         print(ZI)
         
+        
+      #print('axis : ',axis[1])
+      
       # Start plot 
       fig    = plt.figure(figsize=xsize)
       ax     = fig.add_subplot(111)
@@ -258,7 +262,13 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
 #      img    = plt.imread("dark-blue-ocean.jpg")
 #      ax.imshow(img, extent=[0, max(axis[0]), 0, max(axis[1])]) #, aspect='auto')
 
-      xx, yy = np.meshgrid(axis[1],axis[0])
+      x0,y0 = axis[1],axis[0]
+      if xy is not None:
+          if xy[0,0] != xy[0,1]:
+              x0 = [ij+xy[0,0] for ij in x0]
+          elif xy[1,0] != xy[1,1]:
+              x0 = [ij+xy[1,0] for ij in x0]
+      xx, yy = np.meshgrid(x0,y0)
 
       cmap = cmaps['Mean']
       norm = None
@@ -285,7 +295,8 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
                 #CS2   = ax.contour(xx,yy,zm[obj],colors=color,linewidths=lw/4)
       else:
         if idxzi2D is not None:
-          CS3 = plt.plot(axis[1],ZI,color='k',lw=lw2,linestyle='--')
+          #CS3 = plt.plot(axis[1],ZI,color='k',lw=lw2,linestyle='--')
+          CS3 = plt.plot(x0,ZI,color='k',lw=lw2,linestyle='--')
         elif (np.sign(nmin)!=np.sign(nmax)):
           CS3 = plt.contour(xx,yy,datap,levels=[0],colors='k',lw=lw2,linestyles='--')
         

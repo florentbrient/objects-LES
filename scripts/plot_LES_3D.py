@@ -50,17 +50,18 @@ vtype   = sys.argv[5] #V0301
 
 ##################################################
 #    Variables of interest
-vars       = ['RVT'] #'Reflectance','LWP','WT','THV','RNPM','THLM','DIVUV','WINDSHEAR'] #,'RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+#vars       = ['Reflectance','LWP','WT','THV','RNPM','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+vars       = ['SVT004','SVT005','SVT006']
 
 #    With objects?
-objectchar = 0
+objectchar = 1
 
 #    Fluxes?
 fluxes     = 0 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':1, 'zview':0, 'mean':0}
+plots0     = {'cross':0, 'zview':0, 'mean':1}
 
 # Average over +/-xx grid points for cross section
 avg        = 0
@@ -95,33 +96,53 @@ DATA    = nc.Dataset(file,'r')
 
 if objectchar:
   # Objects"
-  thrs   = 1
+  thrs   = 2
   thch   = str(thrs).zfill(2)
-  nbmin  = 100 #100 #1000
-  objtyp = ['updr','down','down','down']
-  objnb  = ['001' ,'001' ,'003' ,'002' ]
+  # Minimal volume for object detection vmin
+  # Brient et. al 19 (GRL): 0.25 km^3
+  # By default : 0.02 km^3
+  
+  # Select by?
+  minchar = 'volume' #unit
+  if minchar == 'volume':
+      vmin   = 0.02
+      suffixmin = '_vol'+str(vmin)
+  elif minchar == 'unit':
+      nbmin  = 100 #100 #1000
+      suffixmin = '_nb'+str(nbmin)
+  
+  
   nbplus = tl.svttyp(case,sens) #1
-  if nbplus == 1:
-     objnb = [str(int(ij)+3).zfill(3) for ij in objnb]
   AddWT  = 1
-  WTchar=['' for ij in range(len(objtyp))]
-  if AddWT  == 1:
-    WTchar = ['_WT','_WT','_WT','_WT']
-  typs = [field+'_SVT'+objnb[ij]+WTchar[ij] for ij,field in enumerate(objtyp)]
-  print(typs)
+  typs, objtyp = tl.def_object(thrs,nbplus=nbplus,AddWT=AddWT)
+  
   if ~fluxes:
     vars += ['Frac']
 else:
   typs = []; objtyp=[]
 
 # Dimensions
-var1D  = ['vertical_levels','W_E_direction','S_N_direction']
-data1D = OrderedDict()
+var1D  = ['vertical_levels','W_E_direction','S_N_direction'] #Z,Y,X
+data1D,nzyx,sizezyx = [OrderedDict() for ij in range(3)]
 for ij in var1D:
-  data1D[ij] = DATA[ij][:]/1000. #km #tl.removebounds(DATA[ij][:])
+  data1D[ij]  = DATA[ij][:]/1000. #km #tl.removebounds(DATA[ij][:])
+  nzyx[ij]    = data1D[ij][1]-data1D[ij][0]
+  sizezyx[ij] = len(data1D[ij])
   #print ij,data1D[ij]
 #data1D['vertical_levels']/=1000.
 
+nxny   = nzyx[var1D[1]]*nzyx[var1D[2]] #km^2
+ALT    = data1D[var1D[0]]
+dz     = [0.5*(ALT[ij+1]-ALT[ij-1]) for ij in range(1,len(ALT)-1)]
+dz.insert(0,ALT[1]-ALT[0])
+dz.insert(-1,ALT[-1]-ALT[-2])
+nxnynz = np.array([nxny*ij for ij in dz]) # volume of each level
+nxnynz = np.repeat(np.repeat(nxnynz[:, np.newaxis, np.newaxis]
+                             , sizezyx[var1D[1]], axis=1), sizezyx[var1D[2]], axis=2)
+
+print('1: ',nxnynz.shape)
+print('2: ',nxnynz[:,0,0])
+print('3: ',nxnynz[0,0,:])
 
 # name figure
 nametitle0='TTTT_MMMM_{var}{objch}{vtypch}_{suffix}'+'AAAA' # Cross_x1_y2_Mean_Var_updrdowndowndown_2_nb100_008
@@ -132,7 +153,7 @@ subcloud,cloudbase,cloudmiddle,cloudtop,zb,zi=[0 for ij in range(6)]
 zview0 = {}
 try:
    rct  = DATA['RCT'][:] #tl.removebounds(DATA['RCT'])
-   z    = data1D['vertical_levels']
+   z    = data1D[var1D[0]]
    # Define as the first layer where RCT (ql) > epsilon (1e-6 by default)
    epsilon = 1e-6
    cloudbase,cloudmiddle,cloudtop,zb,zi = tl.cloudinfo(z,rct,epsilon)
@@ -155,7 +176,7 @@ Q0          = Q[0,:,:]
 #plt.contourf(Q[:,0,:]);plt.show()
 THT         = DATA['THT'][:] #tl.removebounds(DATA['THT'])
 P           = DATA['PABST'][:] #tl.removebounds(DATA['PABST'])
-z           = data1D['vertical_levels'][:]*1000. # m
+z           = data1D[var1D[0]][:]*1000. # m
 TA          = THT*pow(100000./P,-1*CC.gammafix)
 TA0         = TA[0,:,:]
 idxlcl,lcl  = tl.findlcl(Q0,TA0,P,z)
@@ -163,7 +184,7 @@ idxlfc,lfc,idxlnb,lnb = tl.findlfc(idxlcl,Q,TA,z)
 ss          = Q.shape
 ZZ          = np.repeat(np.repeat(z[ :,np.newaxis, np.newaxis],ss[1],axis=1),ss[2],axis=2)
 offset      = 0.25
-THV         = tl.createnew('THV',DATA)
+THV         = tl.createnew('THV',DATA,var1D)
 #THV         = tl.removebounds(THV)
 idxzi       = tl.findTHV3D(ZZ,THV,offset)
 
@@ -203,7 +224,14 @@ for typ in typs:
   nameobjs += [nameobj] #updr_SVT001_WT_02
   try:
     dataobj   = DATA[nameobj][:] #tl.removebounds(DATA[nameobj])
-    dataobjs[nameobj],nbr  = tl.do_delete2(dataobj,tl.do_unique(deepcopy(dataobj)),nbmin,rename=True)
+    # current version
+    #dataobjs[nameobj],nbr  = tl.do_delete2(dataobj,tl.do_unique(deepcopy(dataobj)),nbmin,rename=True)
+    
+    # new version (volume)
+    tmpmask = tl.do_unique(deepcopy(dataobj))*nxnynz
+    print('tmpmask ',tmpmask[0,:,0])
+    dataobjs[nameobj],nbr  = tl.do_delete2(dataobj,tmpmask,vmin,rename=True)
+    
     #print nbr,dataobjs[nameobj].shape,np.max(dataobjs[nameobj])
     mask.append(tl.do_unique(deepcopy(dataobjs[nameobj])))
   except:
@@ -221,7 +249,7 @@ for ij in dataobjs.keys():
 
 objch=''.join(objtyp)
 if objch!='':
-  objch='_'+objch+'_'+thch+'_nb'+str(nbmin)
+  objch='_'+objch+'_'+thch+suffixmin
 
 
 vtypch=''
@@ -234,7 +262,7 @@ for vv in vars:
   data      = {} ;
   if vv not in DATA.variables.keys():
      time1  = time.time()
-     tmp    = tl.createnew(vv,DATA)
+     tmp    = tl.createnew(vv,DATA,var1D)
      time2  = time.time()
      print('Creating new variable %s took %0.3f ms' % ("Variable "+vv, (time2-time1)*1000.0))
      

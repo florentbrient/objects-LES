@@ -6,7 +6,7 @@
 
 path=/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/
 cd $path'/scripts/'
-simus=(ARMCU Ru0x0 002 V0301)
+simus=($1 $2 $3 V0301)
 
 pathdata=$path'data/'
 

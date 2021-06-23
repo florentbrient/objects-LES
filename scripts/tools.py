@@ -273,24 +273,24 @@ def findpbltop(typ,DATA,idx=None):
    return idx,toppbl,grad
 
 # Create new variable
-def createnew(vv,DATA):
+def createnew(vv,DATA,var1D):
     # List of variables available for computation
     vc   = {'THV'  :('THT','RVT','RCT'),\
             'THS1' :('THLM','RNPM'),\
             'THS2' :('THLM','RVT','RNPM'),\
             'TA'   :('THT','PABST'),\
-            'DIVUV':('UT','VT','XHAT','YHAT'),\
+            'DIVUV':('UT','VT',var1D[1],var1D[2]),\
             'REHU' :('RVT','THT','PABST'),\
-            'MSE'  :('RVT','THT','PABST','ZHAT'),\
-            'WINDSHEAR' :('UT','VT','ZHAT'),\
+            'MSE'  :('RVT','THT','PABST',var1D[0]),\
+            'WINDSHEAR' :('UT','VT',var1D[0]),\
             'RHO'  :('THT','PABST'),\
             'W2'   :('WT',),\
 #            'LCL'  :('THT','PABST','RVT','ZHAT'),\
            }
-    [vc.update({ij:('THT','ZHAT')}) for ij in ['N','NN','PN','CN']]
-    [vc.update({ij:('THT','RVT','RCT','ZHAT')}) for ij in ['NNV']]
-    [vc.update({ij:('THT','PABST','ZHAT')}) for ij in ['PRW','LWP','Reflectance']]
-    [vc.update({ij:('THT','PABST','RVT','ZHAT')}) for ij in ['LCL','LFC','LNB']]
+    [vc.update({ij:('THT',var1D[0])}) for ij in ['N','NN','PN','CN']]
+    [vc.update({ij:('THT','RVT','RCT',var1D[0])}) for ij in ['NNV']]
+    [vc.update({ij:('THT','PABST',var1D[0])}) for ij in ['PRW','LWP','Reflectance']]
+    [vc.update({ij:('THT','PABST','RVT',var1D[0])}) for ij in ['LCL','LFC','LNB']]
 
     data = []
     if vv in vc.keys(): 
@@ -404,7 +404,26 @@ def createnew(vv,DATA):
        tmp = None
     return tmp
 
-
+# Defining object
+def def_object(thrs,nbplus=0,AddWT=0):
+  # Routine that discriminate object in terms of
+  # conditional sampling m (m=2 -> 1 s.t.d.)
+  # minimum volume Vmin (Vmin = )
+  #thrs   = 1
+  #thch   = str(thrs).zfill(2)
+  #nbmin  = 100 #100 #1000
+  objtyp = ['updr','down','down','down']
+  objnb  = ['001' ,'001' ,'003' ,'002' ]
+  if nbplus == 1:
+     objnb = [str(int(ij)+3).zfill(3) for ij in objnb]
+     
+  WTchar=['' for ij in range(len(objtyp))]
+  if AddWT  == 1:
+    WTchar = ['_WT','_WT','_WT','_WT']
+  
+  typs = [field+'_SVT'+objnb[ij]+WTchar[ij] for ij,field in enumerate(objtyp)]
+  print(typs)
+  return typs, objtyp
 
 # Offset
 def findoffset(var):
@@ -483,6 +502,7 @@ def cond2plot(case,prefix,boxch=False):
                     } 
    xycas['FIRE'] = {'012':([420,600],[455,455]), #([270,350],[474,474]),
                     '021':([100,190],[390,390]), 
+                    '006':([100,190],[390,390]), 
                     } 
    if case == 'IHOP':
      #xydef=([150,350],[440,440])
@@ -540,8 +560,6 @@ def infosfigures(cas, var, mtyp='Mean'):
    infofig['levels']  = levels
    return infofig
    
-
-
 
 # Axis
 def selectdata(zyx,data,slct=None,avg=0):
