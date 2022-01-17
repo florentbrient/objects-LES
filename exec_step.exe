@@ -4,7 +4,11 @@ select=$1
 object=$2
 plot=$3
 
-path=/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/
+
+#path=/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/
+# sxtropics
+path=:/cnrm/tropics/user/couvreux/REPERTOIRE_FLORENT_BRIENT/MESONH/NO_SAVE/
+
 case='FIRE' #'BOMEX' 'FIRE' 'ARMCU'
 sens='Ls2x0' #'L2RA2' 'Ls2x0' 'LNOCF' 'Ru0NC' 'Ru0x0'
 hour='006'
