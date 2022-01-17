@@ -7,7 +7,7 @@ plot=$3
 
 #path=/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/
 # sxtropics
-path=:/cnrm/tropics/user/couvreux/REPERTOIRE_FLORENT_BRIENT/MESONH/NO_SAVE/
+path=`pwd`
 
 case='FIRE' #'BOMEX' 'FIRE' 'ARMCU'
 sens='Ls2x0' #'L2RA2' 'Ls2x0' 'LNOCF' 'Ru0NC' 'Ru0x0'
@@ -19,13 +19,14 @@ svt=(SVT004 SVT005 SVT006)
 if [ $select = 1 ] ; then
 echo 'Running selection variables...'
 cd $path/rename_netcdf
-./script_rename_dim $case $sens
+./script_rename_dim $case $sens $svt
 fi
 
 if [ $object = 1 ] ; then
 echo 'Running selection objects...'
-cd /Users/florentbrient/Dropbox/GitHub/objects/script/
-file=${path}data/${case}/${sens}/sel_${sens}.1.V0301.${hour}.nc4
+pathobj=../objects/script/
+cd $pathobj
+file=${path}/data/${case}/${sens}/sel_${sens}.1.V0301.${hour}.nc4
 python identify_downdrafts_and_updrafts.py updraft   ${svt[0]} $file
 python identify_downdrafts_and_updrafts.py downdraft ${svt[2]} $file
 python identify_downdrafts_and_updrafts.py updraft   ${svt[0]}+WT $file

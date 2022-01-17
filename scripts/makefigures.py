@@ -1,5 +1,7 @@
 import netCDF4 as nc
 import pylab as plt
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib as mpl
 import matplotlib.colors as colors
 import numpy as np 
@@ -8,6 +10,8 @@ from copy import deepcopy
 from collections import OrderedDict
 
 import tools as tl
+matplotlib.use('Agg')
+
 
 def coloryourself(start,end,nb):
    color1=np.linspace(start[0],end[0],nb)

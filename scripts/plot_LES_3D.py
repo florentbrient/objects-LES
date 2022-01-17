@@ -54,7 +54,7 @@ vtype   = sys.argv[5] #V0301
 vars       = ['SVT004','SVT005','SVT006']
 
 #    With objects?
-objectchar = 1
+objectchar = 0 #1
 
 #    Fluxes?
 fluxes     = 0 #WT by default
