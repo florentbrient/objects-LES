@@ -3,8 +3,9 @@ batch=1 ; export batch
 echo $1 $2
 
 pathdata='/Volumes/TOSHIBA/'$1'/'
+pathdata='/media/fbrient/TOSHIBA/'$1'/'
 # sxtropics
-pathdata='/cnrm/tropics/user/couvreux/REPERTOIRE_FLORENT_BRIENT/MESONH/NO_SAVE/'$1'/'$2'/'
+#pathdata='/cnrm/tropics/user/couvreux/REPERTOIRE_FLORENT_BRIENT/MESONH/NO_SAVE/'$1'/'$2'/'
 
 #path='/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/data/'$1'/'$2'/'
 path='../data/'$1'/'$2'/'
@@ -15,8 +16,8 @@ dirlist=`find ${pathdata}${2}* -not -name '*000*' | xargs -n 1 basename`
 echo ${pathdata}${2}*
 echo $dirlist
 
-var=XHAT,YHAT,ZHAT,UT,VT,WT,PABST,RVT,THT,THLM,RCT,SVT004,SVT005,SVT006 #${3[0]},${3[1]},${3[2]}
-SVT004,SVT005,SVT006 #,SVT004,SVT005,SVT006 #,SVT001,SVT002,SVT003
+var=XHAT,YHAT,ZHAT,UT,VT,WT,PABST,RVT,THT,THLM,SVT001,SVT002,SVT003 #RCT #${3[0]},${3[1]},${3[2]}
+#SVT004,SVT005,SVT006 #,SVT004,SVT005,SVT006 #,SVT001,SVT002,SVT003
 #var=XHAT,YHAT,ZHAT,RRT,RCT
 
 for fich in $dirlist
@@ -28,6 +29,7 @@ do
  ncrename -O -h -d X,W_E_direction -d Y,S_N_direction -d Z,vertical_levels -v XHAT,W_E_direction -v YHAT,S_N_direction -v ZHAT,vertical_levels toto.nc totob.nc
  echo "modify..."
  mv totob.nc $path'sel_'$fich
+#ncap2 -A totob.nc $path'sel_'$fich
  rm toto*
 done
 
