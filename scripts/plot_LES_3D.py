@@ -50,18 +50,18 @@ vtype   = sys.argv[5] #V0301
 
 ##################################################
 #    Variables of interest
-#vars       = ['Reflectance','LWP','WT','THV','RNPM','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
-vars       = ['SVT004','SVT005','SVT006']
+vars       = ['Reflectance','LWP','WT','THV','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+vars       += ['SVT001','SVT002','SVT003','SVT004','SVT005','SVT006']
 
 #    With objects?
-objectchar = 0 #1
+objectchar = 1 #1
 
 #    Fluxes?
-fluxes     = 0 #WT by default
+fluxes     = 1 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':0, 'zview':0, 'mean':1}
+plots0     = {'cross':1, 'zview':1, 'mean':1}
 
 # Average over +/-xx grid points for cross section
 avg        = 0
@@ -113,7 +113,9 @@ if objectchar:
   
   
   nbplus = tl.svttyp(case,sens) #1
+  # Object based on tracer concentration AND vertical velocity?
   AddWT  = 1
+
   typs, objtyp = tl.def_object(thrs,nbplus=nbplus,AddWT=AddWT)
   
   if ~fluxes:

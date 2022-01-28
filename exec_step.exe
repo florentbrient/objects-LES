@@ -11,10 +11,10 @@ path=`pwd`
 
 case='IHOP' #'BOMEX' 'FIRE' 'ARMCU'
 sens='Ru0x0' #'L2RA2' 'Ls2x0' 'LNOCF' 'Ru0NC' 'Ru0x0'
-hour='006'
+hour=('006',)
 
 svt=(SVT001 SVT002 SVT003)
-svt=(SVT004 SVT005 SVT006)
+#svt=(SVT004 SVT005 SVT006)
 
 if [ $select = 1 ] ; then
 echo 'Running selection variables...'
@@ -25,6 +25,7 @@ fi
 if [ $object = 1 ] ; then
 echo 'Running selection objects...'
 pathobj=../objects/script/
+pathobj=../../Dropbox/GitHub/objects/script
 cd $pathobj
 file=${path}/data/${case}/${sens}/sel_${sens}.1.V0301.${hour}.nc4
 python identify_downdrafts_and_updrafts.py updraft   ${svt[0]} $file
