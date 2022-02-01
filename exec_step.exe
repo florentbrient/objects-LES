@@ -3,18 +3,18 @@
 select=$1
 object=$2
 plot=$3
-
+stat=$4
 
 #path=/Users/florentbrient/Dropbox/MESO-NH/Github/objects-LES/
 # sxtropics
 path=`pwd`
 
-case='AYOTTE' #'RICO' #'IHOP' #'BOMEX' 'FIRE' 'ARMCU'
-sens='24Sx0' #'Ru0x0' #'L2RA2' 'Ls2x0' 'LNOCF' 'Ru0NC' 'Ru0x0'
-hour=('006')
+case='FIRE' #'IHOP' #'AYOTTE' #'RICO' #'IHOP' #'BOMEX' 'FIRE' 'ARMCU'
+sens='Ls2x0' #'Ru0x0' #'24Sx0' #'Ru0x0' #'L2RA2' 'Ls2x0' 'LNOCF' 'Ru0NC' 'Ru0x0'
+hour=('021')
 
-svt=(SVT001 SVT002 SVT003)
-#svt=(SVT004 SVT005 SVT006)
+#svt=(SVT001 SVT002 SVT003)
+svt=(SVT004 SVT005 SVT006)
 
 if [ $select = 1 ] ; then
 echo 'Running selection variables...'
@@ -47,4 +47,9 @@ if [ $plot = 1 ] ; then
 echo 'Running plot...'
 cd $path
 ./run_plot_LES_3D.sh $case $sens $hour
+fi
+
+if [ $stat = 1 ] ; then
+echo 'Running stats...'
+./run_stats.sh $case $sens $hour ${svt[@]}
 fi

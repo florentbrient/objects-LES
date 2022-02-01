@@ -8,11 +8,13 @@ from netCDF4 import Dataset
 import numpy as np
 from matplotlib import pyplot as plt
 import tools as tl
-from itertools import chain
+#from itertools import chain
 from copy import deepcopy
-import scipy as sp
-from scipy import ndimage as ndi
+#import scipy as sp
+#from scipy import ndimage as ndi
 import time
+from collections import OrderedDict
+
 
 def format(value):
     return "%13.1f" % value
@@ -59,9 +61,14 @@ except:
 file_dir       = "../data/"+cas+"/"+simu+"/"
 filename_input = "sel_"+simu+".1."+name+"."+hour+".nc4"
 
+# out files
+dir_out        = "../data/d_stats/"+cas+"/";tl.mkdir(dir_out)
+dir_out       += simu+"/";tl.mkdir(dir_out)
+
 liste_fichiers = file_dir+filename_input
 print(liste_fichiers)
 
+# Open data
 DATA = Dataset(liste_fichiers)
 
 #################
@@ -82,19 +89,19 @@ nxnynz = np.array([nxny*ij for ij in dz]) # volume of each level
 nxnynz = np.repeat(np.repeat(nxnynz[:, np.newaxis, np.newaxis]
                              , sizezyx[var1D[1]], axis=1), sizezyx[var1D[2]], axis=2)
 
-print('1: ',nxnynz.shape)
-print('2: ',nxnynz[:,0,0])
-print('3: ',nxnynz[0,0,:])
+#print('1: ',nxnynz.shape)
+#print('2: ',nxnynz[:,0,0])
+#print('3: ',nxnynz[0,0,:])
   
-X    = tl.removebounds(DATA.variables[var1D[1]][:])
-Y    = tl.removebounds(DATA.variables[var1D[2]][:])
+X    = DATA.variables[var1D[1]][:]
+Y    = DATA.variables[var1D[2]][:]
 nx,ny,nz = (X[1]-X[0])/1e3,(Y[1]-Y[0])/1e3,(ALT[1]-ALT[0])/1e3
 #################
 
 
-WT   = tl.removebounds(DATA.variables['WT'][:])
-THLM = tl.removebounds(DATA.variables['THLM'][:])
-RNPM = tl.removebounds(DATA.variables['RNPM'][:])
+WT   = DATA.variables['WT'][:]
+THLM = DATA.variables['THLM'][:]
+RNPM = DATA.variables['RNPM'][:]
 print(WT.shape)
 
 # zmax = Altitude maximum to average fluxes !!
@@ -149,8 +156,7 @@ if maketest:
 # if condition AND/OR
 jointyp  = cond
 # Name of the output file
-dirout   = file_dir+'d_stats/'+'d_'+cas  ;  tl.mkdir(dirout)
-fileout0 = dirout+'stats.'+jointyp.join(typ)+'.'+''.join(selSVT)+'.LL.'+filename_input+'.3'+testch+'.txt'
+fileout0 = dir_out+'stats.'+jointyp.join(typ)+'.'+''.join(selSVT)+'.LL.'+filename_input+'.3'+testch+'.txt'
 
 id1=-1
 # Run along the number of m values
@@ -161,7 +167,7 @@ for ll in listthrs:
   for ik in range(len(typ)):
     nameobjs.append(typ[ik][0:4]+'_'+selSVT[ik]+'_'+str(ll).zfill(2))
     print('nameobjs ',ll,nameobjs[ik])
-    OBJ.append(tl.removebounds(DATA.variables[nameobjs[ik]][:])[0:zmax,:,:])
+    OBJ.append(DATA.variables[nameobjs[ik]][:][0:zmax,:,:])
 
   sz        = OBJ[0].shape
   frac,fTHLM,fTHLMfr,fTHLMrem,fTHLMtot,fRNPM,fRNPMfr,fRNPMrem,fRNPMtot= [np.zeros(sz[0]) for ij in range(9)]
@@ -169,7 +175,7 @@ for ll in listthrs:
   tophatTHLM, intraTHLM, tophatRNPM, intraRNPM = [np.zeros(sz[0]) for ij in range(4)]
 
   fileout = fileout0.replace('LL',str(ll)); 
-  f = open(fileout, 'wb')
+  f = open(fileout, 'w')
   f.write("File name : "+liste_fichiers+"\n")
   f.write(jointyp.join(typ)+" threshold : "+str(ll*0.5)+"\n")
   names  = ['nbmin ','nb ','surf ','vol ','rvol ','rTHLMflux ','rRNPMflux','altmin ','altmax\n']
@@ -262,7 +268,7 @@ for ll in listthrs:
 
      # Flux totaux, Fi, tophat, intra-inter, sub compensatoire
      #filesave='decomposition_flux_'+var+'_'+typ
-     filesave  = 'd_'+cas+'/'+'decomposition_flux_'+'XX'+'_'+jointyp.join(typ)+'_'+''.join(selSVT)
+     filesave  = dir_out+'decomposition_flux_'+'XX'+'_'+jointyp.join(typ)+'_'+''.join(selSVT)
      filesave += '_'+simu+'_'+hour+'_'+str(ll)+'_'+str(ij)
      if name != 'V0301':
         filesave += '_'+name
