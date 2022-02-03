@@ -17,7 +17,7 @@ from collections import OrderedDict
 
 
 def format(value):
-    return "%13.1f" % value
+    return "%13.3f" % value
 def format2(value):
     return "%13s" % value
 
@@ -137,33 +137,46 @@ vtot     = np.sum(nxnynz)
 listthrs = [0,1,2,3,4] #[0]
 N1       = len(listthrs)
 # Vmin (can be defined in units or volume in km^3)
-minchar = 'volume' #unit
+minchar = 'volume' #'volume' #unit
 if minchar == 'volume':
-    nbmins   = [0,0.01,0.02,0.05,0.10,0.25]
+    nbmins   = [0.005,0.01,0.02,0.05,0.10,0.25]
 else:
     nbmins   = [0,10,50,100,500,1000,5000,10000,20000]
 N2 = len(nbmins) #,50,100,500,1000,5000,10000,20000];
+#####
+
 nbr,surf,volume,alpha,fluxTHLM,fluxRNPM,fremTHLM,fremRNPM,fluxTHLM2,fluxRNPM2,fremTHLM2,fremRNPM2,altmin,altmax       = [np.zeros((N1,N2)) for ij in range(14)]
 
 # Test with one value
-maketest = True
+maketest = False
 testch   = ''
 if maketest:
   listthrs = [2] #[2]
-  nbmins   = [nbmins[2]] #[0,10,50,100,500,1000,5000,10000,20000] #[10000]
-  testch   = '.test.tophat'
+  #nbmins   = [nbmins[4]] #[0,10,50,100,500,1000,5000,10000,20000] #[10000]
+  testch   = '.test'
 
+### Name the output file
 # if condition AND/OR
 jointyp  = cond
+# First letter
+typ_first = [x[0] for x in typ]
+# info tracer
+sel_first = [x[-4:] for x in selSVT]
+# Important info from filename
+print(filename_input.split('.'))
+file_short='_'.join(np.array(filename_input.split('.'))[[0,-2]])
+file_short=file_short.replace('sel_', '') 
 # Name of the output file
-fileout0 = dir_out+'stats.'+jointyp.join(typ)+'.'+''.join(selSVT)+'.LL.'+filename_input+'.3'+testch+'.txt'
+fileout0  = dir_out
+#fileout0 += 'stats.'+jointyp.join(typ)+'.'+''.join(selSVT)+'.LL.'+filename_input+'.3'+testch+'.txt'
+fileout0 += 'stats.'+''.join(typ_first)+'.'+''.join(sel_first)+'.LL.'+file_short+testch+'.txt'
 
-id1=-1
-# Run along the number of m values
-for ll in listthrs:
+# Run along the number of m values (conditional sampling)
+#id1=-1
+for id1,ll in enumerate(listthrs):
   OBJ      = []
   nameobjs = []
-  id1     +=1
+  #id1     +=1
   for ik in range(len(typ)):
     nameobjs.append(typ[ik][0:4]+'_'+selSVT[ik]+'_'+str(ll).zfill(2))
     print('nameobjs ',ll,nameobjs[ik])
@@ -177,30 +190,40 @@ for ll in listthrs:
   fileout = fileout0.replace('LL',str(ll)); 
   f = open(fileout, 'w')
   f.write("File name : "+liste_fichiers+"\n")
+  f.write("Object types : "+''.join(selSVT)+"\n")
   f.write(jointyp.join(typ)+" threshold : "+str(ll*0.5)+"\n")
-  names  = ['nbmin ','nb ','surf ','vol ','rvol ','rTHLMflux ','rRNPMflux','altmin ','altmax\n']
-  unity  = ['-','-','km2','km3','%','%','%','%','%\n'] 
+  names  = ['nbmin',' nb',' surf',' vol',' rvol',' rTHLMflux',' rRNPMflux',' altmin',' altmax\n']
+  unity  = ['-','-','km2','km3','%','%','%','km','km\n'] 
   for v in names:
     f.write(format2(v))
   for v in unity:
     f.write(format2(v))
   id2     =-1
-  for ij in nbmins:
+  for ij,bin in enumerate(nbmins):
+    print('ij,bin : ',ij,bin)
     id2    +=1
     mask   = tl.do_unique(deepcopy(OBJ[0]))
-
+    if minchar == 'volume':
+        mask = mask*nxnynz # Not good... 2D not 3D
     time1 = time.time()
-    OBJ[0],nbr[id1,id2]  = tl.do_delete2(OBJ[0],mask,ij,rename=True)
+    OBJ[0],nbr[id1,id2]  = tl.do_delete2(OBJ[0],mask,bin,rename=True)
     print(nbr[id1,id2])
     time2 = time.time()
-    print('%s function 1 took %0.3f s for Vmin=%5.0f' % ("delete", (time2-time1)*1.0, ij))
-    
+    print('%s function 1 took %0.3f s for Vmin=%7.3f' % ("delete", (time2-time1)*1.0, bin))
+    # Check volume or number
+    #labs = np.unique(OBJ[0])
+    #print('labs ',labs)
+    #for lab in labs:
+    #  print(lab,np.sum(mask[OBJ[0]==lab]))
+        
     if nbr[id1,id2] >-1:
      condition         = (OBJ[0]!=0)
      for ik in range(len(typ)-1):
        ikk              = ik+1
        mask             = tl.do_unique(deepcopy(OBJ[ikk]))
-       OBJ[ikk],nbrtmp  = tl.do_delete2(OBJ[ikk],mask,ij,rename=True)
+       if minchar == 'volume':
+         mask = mask*nxnynz # Not good... 2D not 3D
+       OBJ[ikk],nbrtmp  = tl.do_delete2(OBJ[ikk],mask,bin,rename=True)
        nbr[id1,id2]    += nbrtmp
        if jointyp  == 'and':
          condition       = (condition & (OBJ[ikk]!=0))
@@ -269,11 +292,11 @@ for ll in listthrs:
      # Flux totaux, Fi, tophat, intra-inter, sub compensatoire
      #filesave='decomposition_flux_'+var+'_'+typ
      filesave  = dir_out+'decomposition_flux_'+'XX'+'_'+jointyp.join(typ)+'_'+''.join(selSVT)
-     filesave += '_'+simu+'_'+hour+'_'+str(ll)+'_'+str(ij)
+     filesave += '_'+simu+'_'+hour+'_'+str(ll)+'_'+str(bin)
      if name != 'V0301':
         filesave += '_'+name
      title     = 'Flux '+cas+' '+simu+' '+hour \
-               +' '+jointyp.join(typ)+' (m='+str(float(ll)/2.)+',Vmin='+str(ij)+')'
+               +' '+jointyp.join(typ)+' (m='+str(float(ll)/2.)+',Vmin='+str(bin)+')'
 
      alphai = frac
      tot=fTHLMtot; Fi=alphai*fTHLM; tophat=alphai*tophatTHLM; 
@@ -310,15 +333,16 @@ for ll in listthrs:
        min0,max0         = [],[]
        for il in listObjs: #range(max(listObjs)):
           cd = np.where(OBJ[0].reshape((sz[0],sz[1]*sz[2]))==il)
-          min0.append(np.min(cd[0])*nz*1e3); max0.append(np.max(cd[0])*nz*1e3)
+          # Error? ? si nz change with height???
+          min0.append(np.min(cd[0])*nz*1e3); max0.append(np.max(cd[0])*nz*1e3) 
           #print il,cd,altmin,altmax
        altmin[id1,id2]   = np.mean(min0)
        altmax[id1,id2]   = np.mean(max0)
 
-    tab               = [ij,nbr[id1,id2],surf[id1,id2],volume[id1,id2],100.*alpha[id1,id2],fluxTHLM[id1,id2],fluxRNPM[id1,id2],altmin[id1,id2],altmax[id1,id2]]
+    tab               = [bin,nbr[id1,id2],surf[id1,id2],volume[id1,id2],100.*alpha[id1,id2],fluxTHLM[id1,id2],fluxRNPM[id1,id2],altmin[id1,id2],altmax[id1,id2]]
     print(tab)
     for v in tab:
-      f.write(str(format(v))+' ')
+      f.write(str(format(v)))
     f.write("\n")
   f.close()
 

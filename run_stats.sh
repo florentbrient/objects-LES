@@ -94,6 +94,20 @@ echo '5'
 done
 done
 
+typs=(updraft)
+tracer=${svt[0]}_WT
+for typ in "${typs[@]}"
+do
+for hour in "${hours[@]}"
+do
+echo '1'
+echo $PWD
+echo $tracer
+python stats_flux.py $typ $tracer $sens $hour $case $name
+done
+done
+
+
 typs=(updraft,downdraft,downdraft,downdraft)
 #tracer=SVT003,SVT001,SVT002_WT
 #tracer=WT,WT
