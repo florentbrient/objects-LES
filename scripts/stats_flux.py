@@ -14,6 +14,7 @@ from copy import deepcopy
 #from scipy import ndimage as ndi
 import time
 from collections import OrderedDict
+import Constants as CC
 
 
 def format(value):
@@ -52,10 +53,21 @@ simu     = sys.argv[3] #'L25.6'
 hour     = sys.argv[4] #'003'
 cas      = sys.argv[5] #'FIRE'
 name     = sys.argv[6] #'V0301'
+subcloud = sys.argv[7] #subcloud
+nocloud  = sys.argv[8] #cloud
 try:
-  cond = sys.argv[7]
+  cond = sys.argv[9]
 except:
   cond = ''
+
+subcloud,nocloud=False,False
+subprefix,nocldprefix='',''
+if subcloud=='1':
+  subcloud=True
+  subprefix='.scld'
+if nocloud=='1':
+  nocloud=True
+  nocldprefix='.nocld'
 
 # open file
 file_dir       = "../data/"+cas+"/"+simu+"/"
@@ -81,43 +93,90 @@ for ij in var1D:
   sizezyx[ij] = len(data1D[ij])
 
 nxny   = nzyx[var1D[1]]*nzyx[var1D[2]] #km^2
+
+X    = DATA.variables[var1D[1]][:]
+Y    = DATA.variables[var1D[2]][:]
 ALT    = data1D[var1D[0]]
+
 dz     = [0.5*(ALT[ij+1]-ALT[ij-1]) for ij in range(1,len(ALT)-1)]
 dz.insert(0,ALT[1]-ALT[0])
 dz.insert(-1,ALT[-1]-ALT[-2])
 nxnynz = np.array([nxny*ij for ij in dz]) # volume of each level
 nxnynz = np.repeat(np.repeat(nxnynz[:, np.newaxis, np.newaxis]
-                             , sizezyx[var1D[1]], axis=1), sizezyx[var1D[2]], axis=2)
+                             ,len(Y), axis=1), len(X), axis=2)
 
-#print('1: ',nxnynz.shape)
-#print('2: ',nxnynz[:,0,0])
-#print('3: ',nxnynz[0,0,:])
-  
-X    = DATA.variables[var1D[1]][:]
-Y    = DATA.variables[var1D[2]][:]
 nx,ny,nz = (X[1]-X[0])/1e3,(Y[1]-Y[0])/1e3,(ALT[1]-ALT[0])/1e3
 #################
 
+# Variable to be analyzed/saved at the same time
+namevar  = ['THLM','RNPM']
+Const    = [CC.RCP,CC.RLVTT] # Constants used for quantified fluxes in W/m2
+nbvar    = len(namevar) # number of variables
 
 WT   = DATA.variables['WT'][:]
 THLM = DATA.variables['THLM'][:]
 RNPM = DATA.variables['RNPM'][:]
+P    = DATA.variables['PABST'][:]
+THT  = DATA.variables['THT'][:]
 print(WT.shape)
+#create rho
+TT   = tl.tht2temp(THT,P)
+RHO  = tl.createrho(TT,P)
+
+RCTflag=False
+try:
+  RCT  = DATA.variables['RCT'][:]
+  if RCT.max()!=0:
+    RCTflag=True
+except:
+  pass
+
+try:
+  CLDFR  = DATA.variables['CLDFR'][:]
+  print('CLDFR : ',CLDFR.max())
+except:
+  CLDFR  = np.nan
+
+# Find maximum with tracer concentration
+nameSVT=['SVT006','SVT003']
+if subcloud and RCTflag: #RCT.max()!=0:
+  nameSVT=['SVT005','SVT002']
+try:
+  SVTtop = DATA.variables[nameSVT[0]][:]
+except:
+  SVTtop = DATA.variables[nameSVT[1]][:]
+SVTmean  = SVTtop.mean(axis=(1,2))
+print(SVTmean)
+idx = SVTmean.argmax()
+print('idx from SVT ',idx,ALT[idx],SVTmean[idx])
+
+# Importance of zmax : Maximul altitude for averaging !!
 
 # zmax = Altitude maximum to average fluxes !!
 # Very important
-zmax     = WT.shape[0]
 if cas == 'FIRE':
-  altmax = 620. 
-  #zmax   = 62 # maximum layer
-  zmax   = tl.near(ALT,altmax)
+  altmax = 0.62 # in km
+elif cas == 'BOMEX' or  cas == 'IHOP':
+  altmax = 2. # in km
+else:
+  altmax = None
+zmax   = tl.near(ALT,altmax)
+print('ALT ',altmax,zmax,ALT)
+
+# Impose idx from highest SVT (cloud top or inversion height)
+zmax  = idx 
+
+# Altitude constrained with zmax
+alts = ALT[:zmax]
 
 # Resize
 WT       = WT[0:zmax,:,:]
 THLM     = THLM[0:zmax,:,:]
-RNPM     = RNPM[0:zmax,:,:]*1000.
+RNPM     = RNPM[0:zmax,:,:] #*1000.
 dz       = dz[0:zmax]
 nxnynz   = nxnynz[0:zmax,:,:]
+if nocloud and CLDFR.max()!=0:
+   CLDFR = CLDFR[0:zmax,:,:]
 
 # Calculate anomalies
 ATHLM    = tl.anomcalc(THLM)
@@ -145,15 +204,21 @@ else:
 N2 = len(nbmins) #,50,100,500,1000,5000,10000,20000];
 #####
 
-nbr,surf,volume,alpha,fluxTHLM,fluxRNPM,fremTHLM,fremRNPM,fluxTHLM2,fluxRNPM2,fremTHLM2,fremRNPM2,altmin,altmax       = [np.zeros((N1,N2)) for ij in range(14)]
+nbr,surf,volume,alpha,altmin,altmax  = [np.zeros((N1,N2)) for ij in range(6)]
+rfluxVAR,rfremVAR,fluxVAR2,fremVAR2  = [np.zeros((nbvar,N1,N2)) for ij in range(4)]
+fluxVARpos,fluxVARneg                = [np.zeros((nbvar,N1,N2)) for ij in range(2)]
+Massflux = np.zeros((N1,N2))
 
 # Test with one value
-maketest = False
+maketest = True
 testch   = ''
 if maketest:
   listthrs = [2] #[2]
   #nbmins   = [nbmins[4]] #[0,10,50,100,500,1000,5000,10000,20000] #[10000]
   testch   = '.test'
+
+# Plot tophat
+makefigures=False
 
 ### Name the output file
 # if condition AND/OR
@@ -169,7 +234,9 @@ file_short=file_short.replace('sel_', '')
 # Name of the output file
 fileout0  = dir_out
 #fileout0 += 'stats.'+jointyp.join(typ)+'.'+''.join(selSVT)+'.LL.'+filename_input+'.3'+testch+'.txt'
-fileout0 += 'stats.'+''.join(typ_first)+'.'+''.join(sel_first)+'.LL.'+file_short+testch+'.txt'
+fileout0 += 'stats.'+''.join(typ_first)+'.'+''.join(sel_first)+\
+        '.LL.'+file_short+testch+subprefix+nocldprefix+\
+        '.txt'
 
 # Run along the number of m values (conditional sampling)
 #id1=-1
@@ -181,33 +248,32 @@ for id1,ll in enumerate(listthrs):
     nameobjs.append(typ[ik][0:4]+'_'+selSVT[ik]+'_'+str(ll).zfill(2))
     print('nameobjs ',ll,nameobjs[ik])
     OBJ.append(DATA.variables[nameobjs[ik]][:][0:zmax,:,:])
-
   sz        = OBJ[0].shape
-  frac,fTHLM,fTHLMfr,fTHLMrem,fTHLMtot,fRNPM,fRNPMfr,fRNPMrem,fRNPMtot= [np.zeros(sz[0]) for ij in range(9)]
-  WTI, THI, RTI = [np.zeros(sz[0]) for ij in range(3)]
-  tophatTHLM, intraTHLM, tophatRNPM, intraRNPM = [np.zeros(sz[0]) for ij in range(4)]
 
   fileout = fileout0.replace('LL',str(ll)); 
   f = open(fileout, 'w')
   f.write("File name : "+liste_fichiers+"\n")
   f.write("Object types : "+''.join(selSVT)+"\n")
   f.write(jointyp.join(typ)+" threshold : "+str(ll*0.5)+"\n")
-  names  = ['nbmin',' nb',' surf',' vol',' rvol',' rTHLMflux',' rRNPMflux',' altmin',' altmax\n']
-  unity  = ['-','-','km2','km3','%','%','%','km','km\n'] 
+#  names  = ['nbmin',' nb',' surf',' vol',' rvol',' rTHLMflux',' rRNPMflux',' altmin',' altmax\n']
+#  unity  = ['-','-','km2','km3','%','%','%','km','km\n']  
+  names  = ['nbmin ','nb ','surf ','vol ','rvol ','rTHLMflux ','rRNPMflux','altmin ','altmax', \
+            'pTHLMfl','nTHLMfl','pRNPMfl','nRNPMfl','MassFlux','WTmax''\n']
+  unity  = ['-','-','km2','km3','%','%','%','%','%','W/m2','W/m2','W/m2','W/m2','kg/m2/s','m/s''\n']
+  
   for v in names:
     f.write(format2(v))
   for v in unity:
     f.write(format2(v))
-  id2     =-1
-  for ij,bin in enumerate(nbmins):
-    print('ij,bin : ',ij,bin)
-    id2    +=1
+  for id2,bin in enumerate(nbmins):
+    print('ib, bin : ',id2,bin)
     mask   = tl.do_unique(deepcopy(OBJ[0]))
     if minchar == 'volume':
         mask = mask*nxnynz # Not good... 2D not 3D
     time1 = time.time()
     OBJ[0],nbr[id1,id2]  = tl.do_delete2(OBJ[0],mask,bin,rename=True)
-    print(nbr[id1,id2])
+    NT    = int(np.nanmax(nbr))
+    print(nbr[id1,id2],NT)
     time2 = time.time()
     print('%s function 1 took %0.3f s for Vmin=%7.3f' % ("delete", (time2-time1)*1.0, bin))
     # Check volume or number
@@ -226,70 +292,90 @@ for id1,ll in enumerate(listthrs):
        OBJ[ikk],nbrtmp  = tl.do_delete2(OBJ[ikk],mask,bin,rename=True)
        nbr[id1,id2]    += nbrtmp
        if jointyp  == 'and':
-         condition       = (condition & (OBJ[ikk]!=0))
+         condition      = (condition & (OBJ[ikk]!=0))
        elif jointyp  == 'or':
-         condition       = (condition | (OBJ[ikk]!=0))
+         condition      = (condition | (OBJ[ikk]!=0))
+         
+     if nocloud and CLDFR.max()!=0:
+       for inn in range(1,NT+1):
+         idx = np.sum(CLDFR[OBJ[0]==inn])
+         idxlc = 27 # 27 pixels for a cloud
+         print(inn,idx)
+         if idx>=idxlc:
+           print(CLDFR[OBJ[0]==inn])
+           print(inn, np.sum(CLDFR[OBJ[0]==inn]))
+           condition[OBJ[0]==inn]=0.
+           nbr[id1,id2]=nbr[id1,id2]-1
+       print('NT new: ',NT,int(np.max(nbr)))
 
      surf[id1,id2]     = np.sum(condition)*nxny #km2
      volume[id1,id2]   = np.sum(nxnynz*condition)#*nxnynz #km3
      alpha[id1,id2]    = volume[id1,id2]/vtot
      
-     # ratio of fluxes (first try)
-     #fluxTHLM[id1,id2] = 100.*(alpha[id1,id2])*np.nanmean(WTTHLM[condition])/np.mean(WTTHLM)
-     #fluxRNPM[id1,id2] = 100.*(alpha[id1,id2])*np.nanmean(WTRNPM[condition])/np.mean(WTRNPM)
+     # Initialisation
+     #fTHLM,fTHLMfr,fTHLMrem,fTHLMtot,
+     tmpflux,tmpvar = [np.zeros((nbvar,sz[1],sz[2])) for ij in range(2)]
+     fVAR,fVARfr,fVARrem,fVARtot,VARM= [np.zeros((nbvar,sz[0])) for ij in range(5)]
+     
+     frac, RHOCD, WTI, THI, RTI = [np.zeros(sz[0]) for ij in range(5)]
+     tophatVAR, intraVAR = [np.zeros((nbvar,sz[0])) for ij in range(2)]
+     MM = np.zeros(sz[0])
+     
      # ratio of fluxes (second try -> good)
      for ik in range(sz[0]):
        cd       = condition[ik,:,:]
-       tmp0     = WTTHLM[ik,:,:]; tmp1 = WTRNPM[ik,:,:]
-       WT0      = WT[ik,:,:]
-       TH0      = THLM[ik,:,:];    RT0 = RNPM[ik,:,:]
-
        frac[ik] = np.sum(cd)/float(sz[1]*sz[2])
-       #print ik,cd.shape,np.sum(cd),float(sz[1]*sz[2]),frac[ik]
-
-       # CS flux contribution
-       #if ik==30:
-       #  print tmp0[:]
-       #  print tmp0[cd]
-       #  print len(tmp0.ravel()),len(tmp0[cd]),frac[ik]
-       #  print np.nansum(tmp0[cd])/len(tmp0[cd])
-       #  print np.nanmean(tmp0[cd])
-       #  #pause
-       fTHLMfr[ik]  = frac[ik]*np.nanmean(tmp0[cd])
-       fTHLM[ik]    = np.nanmean(tmp0[cd])
-       # remaining part
-       fTHLMrem[ik] = (1.0-frac[ik])*np.nanmean(tmp0[~cd])
-       fTHLMtot[ik] = np.mean(tmp0)
+       WT0      = WT[ik,:,:]
+       RHO0     = np.copy(RHO[ik,:,:])
+       RHOCD[ik]= np.nanmean(RHO0[cd])       
+       # Mass flux
+       MM[ik]  = frac[ik]*RHOCD[ik]*np.nanmean(WT0[cd])
        # top-hat approx
        WTI[ik]        = np.nanmean(WT0[cd])
-       THI[ik]        = np.nanmean(TH0[cd])
-       tophatTHLM[ik] = (WTI[ik]-WTM[ik])*(THI[ik]-THM[ik])
-       # internal variability
-       intraTHLM[ik]  = np.nanmean((WT0[cd]-WTI[ik])*(TH0[cd]-THI[ik]))
-       #print 'z, decomp, top-hat, intra ',ik, fTHLMfr[ik], tophatTHLM[ik], intraTHLM[ik]
        
+       # tmpvar and tmpflux
+       # Var 0 = THLM
+       tmpflux[0,:,:] = WTTHLM[ik,:,:]
+       tmpvar[0,:,:]  = THLM[ik,:,:]
+       VARM[0,:]      = THM
+       # Var 1 = RNPM
+       tmpflux[1,:,:] = WTRNPM[ik,:,:]
+       tmpvar[1,:,:]  = RNPM[ik,:,:]
+       VARM[1,:]      = RTM
        
-
+       #tmp0     = ; tmp1 = WTRNPM[ik,:,:]
+       #TH0      = THLM[ik,:,:];    RT0 = RNPM[ik,:,:]
+       
+       for iv in range(nbvar):
+         tmpflux0 = tmpflux[iv,:,:]
+         tmpvar0  = tmpvar[iv,:,:]
+         
+         # CS flux contribution
+         fVARfr[iv,ik]  = frac[ik]*np.nanmean(tmpflux0[cd])
+         fVAR[iv,ik]    = np.nanmean(tmpflux0[cd])
+         # remaining part
+         fVARrem[iv,ik]   = (1.0-frac[ik])*np.nanmean(tmpflux0[~cd])
+         fVARtot[iv,ik]   = np.mean(tmpflux0)
+       
+         # internal variability
+         VARi             = np.nanmean(tmpvar0[cd])
+         tophatVAR[iv,ik] = (WTI[ik]-WTM[ik])*(VARi-VARM[iv,ik])
+         intraVAR[iv,ik]  = np.nanmean((tmpvar[iv,cd]-VARi)*(WT0[cd]-WTI[ik]))
+         
+       #intraTHLM[ik]  = np.nanmean((WT0[cd]-WTI[ik])*(TH0[cd]-THI[ik]))
        # CS flux contribution
-       fRNPMfr[ik]  = frac[ik]*np.nanmean(tmp1[cd])
-       fRNPM[ik]    = np.nanmean(tmp1[cd])
+       #fRNPMfr[ik]  = frac[ik]*np.nanmean(tmp1[cd])
+       #fRNPM[ik]    = np.nanmean(tmp1[cd])
        # remaining part
-       fRNPMrem[ik] = (1.0-frac[ik])*np.nanmean(tmp1[~cd])
-       fRNPMtot[ik] = np.mean(tmp1)
+       #fRNPMrem[ik] = (1.0-frac[ik])*np.nanmean(tmp1[~cd])
+       #fRNPMtot[ik] = np.mean(tmp1)
        # top-hat approx
-       RTI[ik]        = np.nanmean(RT0[cd])
-       tophatRNPM[ik] = (WTI[ik]-WTM[ik])*(RTI[ik]-RTM[ik])
+       #RTI[ik]        = np.nanmean(RT0[cd])
+       #tophatRNPM[ik] = (WTI[ik]-WTM[ik])*(RTI[ik]-RTM[ik])
        # internal variability
-       intraRNPM[ik]  = np.nanmean((RT0[cd]-RTI[ik])*(WT0[cd]-WTI[ik]))
-       #print 'z, decomp, top-hat, intra ',ik, fTHLMfr[ik], tophatTHLM[ik], intraTHLM[ik]
+       #intraRNPM[ik]  = np.nanmean((RT0[cd]-RTI[ik])*(WT0[cd]-WTI[ik]))
 
-     #plt.plot(WTI);plt.show()
-     #plt.plot(WTM);plt.show()
-     #plt.plot(THI);plt.show()
-     alts = ALT[:zmax]
-     #plt.plot(frac,alts);plt.show()
-
-     # Flux totaux, Fi, tophat, intra-inter, sub compensatoire
+        # Flux totaux, Fi, tophat, intra-inter, sub compensatoire
      #filesave='decomposition_flux_'+var+'_'+typ
      filesave  = dir_out+'decomposition_flux_'+'XX'+'_'+jointyp.join(typ)+'_'+''.join(selSVT)
      filesave += '_'+simu+'_'+hour+'_'+str(ll)+'_'+str(bin)
@@ -298,48 +384,62 @@ for id1,ll in enumerate(listthrs):
      title     = 'Flux '+cas+' '+simu+' '+hour \
                +' '+jointyp.join(typ)+' (m='+str(float(ll)/2.)+',Vmin='+str(bin)+')'
 
+     # Areal fraction of the object (ij)
      alphai = frac
-     tot=fTHLMtot; Fi=alphai*fTHLM; tophat=alphai*tophatTHLM; 
-     covar=alphai*intraTHLM; subcomp=(alphai*alphai/(1.0-alphai))*tophatTHLM
-     plottophat(alts,tot,Fi,tophat,covar,subcomp,'THLM',filesave,title,legend=3)
-
-     tot=fRNPMtot; Fi=alphai*fRNPM; tophat=alphai*tophatRNPM; 
-     covar=alphai*intraRNPM; subcomp=(alphai*alphai/(1.0-alphai))*tophatRNPM
-     plottophat(alts,tot,Fi,tophat,covar,subcomp,'RNPM',filesave,title,legend=1) #4
-
-
-     # Vertical averaging
-     fluxTHLM[id1,id2] = 100.*np.nansum(abs(fTHLMfr*dz))/np.nansum(abs(fTHLMtot*dz))
-     fluxRNPM[id1,id2] = 100.*np.nansum(abs(fRNPMfr*dz))/np.nansum(abs(fRNPMtot*dz))
-     print(id1,id2,np.nansum(abs(fTHLMfr)),np.nansum(abs(fTHLMtot)),np.nansum(abs(fTHLMfr*dz))/np.nansum(abs(fTHLMtot*dz)))
-     print(id1,id2,np.nansum(abs(fRNPMfr)),np.nansum(abs(fRNPMtot)),np.nansum(abs(fRNPMfr*dz))/np.nansum(abs(fRNPMtot*dz)))
-
-     fremTHLM[id1,id2] = 100.*np.nansum(abs(fTHLMrem*dz))/np.nansum(abs(fTHLMtot*dz))
-     fremRNPM[id1,id2] = 100.*np.nansum(abs(fRNPMrem*dz))/np.nansum(abs(fRNPMtot*dz))
-
-
-#     fluxTHLM2[id1,id2] = 100.*np.nansum(abs(fTHLMfr*dz))/np.nansum(abs(fTHLMfr*dz)+abs(fTHLMrem*dz))
-#     fluxRNPM2[id1,id2] = 100.*np.nansum(abs(fRNPMfr*dz))/np.nansum(abs(fRNPMfr*dz)+abs(fRNPMrem*dz))
-#     print id1,id2,np.nansum(abs(fTHLMfr)),np.nansum(abs(fTHLMfr)+abs(fTHLMrem)),np.nansum(abs(fTHLMfr*dz))/np.nansum(abs(fTHLMfr*dz)+abs(fTHLMrem*dz))
-#     print id1,id2,np.nansum(abs(fRNPMfr)),np.nansum(abs(fRNPMfr)+abs(fRNPMrem)),np.nansum(abs(fRNPMfr*dz))/np.nansum(abs(fRNPMfr*dz)+abs(fRNPMrem*dz))
-#     fremTHLM2[id1,id2] = 100.*np.nansum(abs(fTHLMrem*dz))/np.nansum(abs(fTHLMfr*dz)+abs(fTHLMrem*dz))
-#     fremRNPM2[id1,id2] = 100.*np.nansum(abs(fRNPMrem*dz))/np.nansum(abs(fRNPMfr*dz)+abs(fRNPMrem*dz))
-
-     #print fluxTHLM[id1,id2],fluxRNPM[id1,id2],alpha[id1,id2]
+     # maximum vertical velocity
+     WTmax     = np.nan
+     if ~np.isnan(WTI).all():
+       idx       = np.nanargmax(abs(WTI))
+       WTmax     = WTI[idx]
      
-     # size
+     for iv in range(nbvar):
+       tot=fVARtot[iv,:];Fi=alphai*fVAR[iv,:]; tophat=alphai*tophatVAR[iv,:]
+       covar=alphai*intraVAR[iv,:]; subcomp=(alphai*alphai/(1.0-alphai))*tophatVAR[iv,:]
+       if makefigures:
+         plottophat(alts,tot,Fi,tophat,covar,subcomp,namevar[iv],filesave,title,legend=3)
+
+#     tot=fRNPMtot; Fi=alphai*fRNPM; tophat=alphai*tophatRNPM; 
+#     covar=alphai*intraRNPM; subcomp=(alphai*alphai/(1.0-alphai))*tophatRNPM
+#     plottophat(alts,tot,Fi,tophat,covar,subcomp,'RNPM',filesave,title,legend=1) #4
+
+       # Vertical averaging
+       # flux in W/m2
+       fluxVARpos[iv,id1,id2]  = Const[iv]*np.nansum(fVARfr[iv,:]*RHOCD*dz*(fVARfr[iv,:]>0))/np.nansum(dz)
+       fluxVARneg[iv,id1,id2]  = Const[iv]*np.nansum(fVARfr[iv,:]*RHOCD*dz*(fVARfr[iv,:]<=0))/np.nansum(dz)
+
+       rfluxVAR[iv,id1,id2]    = 100.*np.nansum(abs(fVARfr[iv,:]*dz))/np.nansum(abs(fVARtot[iv,:]*dz))
+       #fluxRNPM[id1,id2] = 100.*np.nansum(abs(fRNPMfr*dz))/np.nansum(abs(fRNPMtot*dz))
+       print(id1,id2,np.nansum(abs(fVARfr[iv,:])),np.nansum(abs(fVARtot[iv,:])),\
+             np.nansum(abs(fVARfr[iv,:]*dz))/np.nansum(abs(fVARtot[iv,:]*dz)))
+       #print(id1,id2,np.nansum(abs(fRNPMfr)),np.nansum(abs(fRNPMtot)),np.nansum(abs(fRNPMfr*dz))/np.nansum(abs(fRNPMtot*dz)))
+
+       rfremVAR[iv,id1,id2]    = 100.*np.nansum(abs(fVARrem[iv,:]*dz))/np.nansum(abs(fVARtot[iv,:]*dz))
+       #fremRNPM[id1,id2] = 100.*np.nansum(abs(fRNPMrem*dz))/np.nansum(abs(fRNPMtot*dz))
+
+     # size of the objects
      if len(typ)==1:
-       listObjs          = np.unique(OBJ[0][OBJ[0]!=0]);#print listObjs
+       listObjs          = np.unique(OBJ[0][OBJ[0]!=0]);#print listObjss
        min0,max0         = [],[]
        for il in listObjs: #range(max(listObjs)):
           cd = np.where(OBJ[0].reshape((sz[0],sz[1]*sz[2]))==il)
           # Error? ? si nz change with height???
-          min0.append(np.min(cd[0])*nz*1e3); max0.append(np.max(cd[0])*nz*1e3) 
+          #min0tmp = np.min(cd[0])*nz*1e3
+          # Fixed?
+          min0tmp = ALT[round(np.min(cd[0]))]
+          min0.append(min0tmp);
+          max0tmp = ALT[round(np.max(cd[0]))] 
+          max0.append(max0tmp)
           #print il,cd,altmin,altmax
        altmin[id1,id2]   = np.mean(min0)
        altmax[id1,id2]   = np.mean(max0)
 
-    tab               = [bin,nbr[id1,id2],surf[id1,id2],volume[id1,id2],100.*alpha[id1,id2],fluxTHLM[id1,id2],fluxRNPM[id1,id2],altmin[id1,id2],altmax[id1,id2]]
+#    tab               = [bin,nbr[id1,id2],surf[id1,id2],volume[id1,id2],100.*alpha[id1,id2],fluxTHLM[id1,id2],fluxRNPM[id1,id2],altmin[id1,id2],altmax[id1,id2]]
+    tab               = [bin,nbr[id1,id2],surf[id1,id2],volume[id1,id2],100.*alpha[id1,id2] \
+                        ,rfluxVAR[0,id1,id2],rfluxVAR[1,id1,id2],altmin[id1,id2],altmax[id1,id2] \
+                        ,fluxVARpos[0,id1,id2],fluxVARneg[0,id1,id2] \
+                        ,fluxVARpos[1,id1,id2],fluxVARneg[1,id1,id2] \
+                        ,Massflux[id1,id2],WTmax
+                        ]
     print(tab)
     for v in tab:
       f.write(str(format(v)))
