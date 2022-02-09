@@ -21,6 +21,7 @@ echo $1
 echo $2
 echo $3
 echo $4
+
 case=$1
 sens=$2
 hours=$3
@@ -29,6 +30,29 @@ svt=($4 $5 $6)
 
 subcloud=0
 cloud=0
+
+typs=(updraft downdraft downdraft downdraft)
+tracer=(${svt[0]}_WT ${svt[0]}_WT ${svt[1]}_WT ${svt[2]}_WT)
+len=${#typs[@]}
+
+for i in $(seq 0 $len)
+do
+typ="${typs[$i]}"
+trac="${tracer[$i]}"
+if [ $i -eq $len ];
+then
+typ=$(IFS=, ; echo "${typs[*]}")
+trac=$(IFS=, ; echo "${tracer[*]}")
+fi
+echo $typ
+echo $trac
+for hour in "${hours[@]}"
+do
+echo 'run'
+python stats_flux.py $typ $trac $sens $hour $case $name $subcloud $cloud
+done
+done
+
 
 typs=(updraft)
 tracer=${svt[0]}_WT
@@ -39,7 +63,7 @@ do
 echo '1'
 echo $PWD
 echo $tracer
-python stats_flux.py $typ $tracer $sens $hour $case $name $subcloud $cloud
+#python stats_flux.py $typ $tracer $sens $hour $case $name $subcloud $cloud
 done
 done
 

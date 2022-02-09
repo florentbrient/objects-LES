@@ -59,15 +59,28 @@ try:
   cond = sys.argv[9]
 except:
   cond = ''
+  
+# Plot tophat
+makefigures=False
 
-subcloud,nocloud=False,False
-subprefix,nocldprefix='',''
 if subcloud=='1':
   subcloud=True
   subprefix='.scld'
+else:
+  subcloud=False
+  subprefix=''
+
 if nocloud=='1':
   nocloud=True
   nocldprefix='.nocld'
+else:
+  nocloud=False
+  nocldprefix=''
+  
+print('subcloud ',subcloud)
+print('subprefix ',subprefix)
+print('nocloud ',nocloud)
+print('nocldprefix ',nocldprefix)
 
 # open file
 file_dir       = "../data/"+cas+"/"+simu+"/"
@@ -118,7 +131,7 @@ THLM = DATA.variables['THLM'][:]
 RNPM = DATA.variables['RNPM'][:]
 P    = DATA.variables['PABST'][:]
 THT  = DATA.variables['THT'][:]
-print(WT.shape)
+#print(WT.shape)
 #create rho
 TT   = tl.tht2temp(THT,P)
 RHO  = tl.createrho(TT,P)
@@ -146,22 +159,22 @@ try:
 except:
   SVTtop = DATA.variables[nameSVT[1]][:]
 SVTmean  = SVTtop.mean(axis=(1,2))
-print(SVTmean)
+#print(SVTmean)
 idx = SVTmean.argmax()
-print('idx from SVT ',idx,ALT[idx],SVTmean[idx])
+print('idx, alt(max SVT), max SVT: ',nameSVT,idx,ALT[idx],SVTmean[idx])
 
+# Very important
 # Importance of zmax : Maximul altitude for averaging !!
 
 # zmax = Altitude maximum to average fluxes !!
-# Very important
-if cas == 'FIRE':
-  altmax = 0.62 # in km
-elif cas == 'BOMEX' or  cas == 'IHOP':
-  altmax = 2. # in km
-else:
-  altmax = None
-zmax   = tl.near(ALT,altmax)
-print('ALT ',altmax,zmax,ALT)
+#if cas == 'FIRE':
+#  altmax = 0.62 # in km
+#elif cas == 'BOMEX' or  cas == 'IHOP':
+#  altmax = 2. # in km
+#else:
+#  altmax = None
+#zmax   = tl.near(ALT,altmax)
+#print('ALT ',altmax,zmax,ALT)
 
 # Impose idx from highest SVT (cloud top or inversion height)
 zmax  = idx 
@@ -210,15 +223,12 @@ fluxVARpos,fluxVARneg                = [np.zeros((nbvar,N1,N2)) for ij in range(
 Massflux = np.zeros((N1,N2))
 
 # Test with one value
-maketest = True
+maketest = False
 testch   = ''
 if maketest:
-  listthrs = [2] #[2]
+  listthrs = [3] #[2]
   #nbmins   = [nbmins[4]] #[0,10,50,100,500,1000,5000,10000,20000] #[10000]
   testch   = '.test'
-
-# Plot tophat
-makefigures=False
 
 ### Name the output file
 # if condition AND/OR
@@ -259,7 +269,7 @@ for id1,ll in enumerate(listthrs):
 #  unity  = ['-','-','km2','km3','%','%','%','km','km\n']  
   names  = ['nbmin ','nb ','surf ','vol ','rvol ','rTHLMflux ','rRNPMflux','altmin ','altmax', \
             'pTHLMfl','nTHLMfl','pRNPMfl','nRNPMfl','MassFlux','WTmax''\n']
-  unity  = ['-','-','km2','km3','%','%','%','%','%','W/m2','W/m2','W/m2','W/m2','kg/m2/s','m/s''\n']
+  unity  = ['-','-','km2','km3','%','%','%','km','km','W/m2','W/m2','W/m2','W/m2','kg/m2/s','m/s''\n']
   
   for v in names:
     f.write(format2(v))
@@ -391,6 +401,10 @@ for id1,ll in enumerate(listthrs):
      if ~np.isnan(WTI).all():
        idx       = np.nanargmax(abs(WTI))
        WTmax     = WTI[idx]
+     
+     # Mass flux in kg/m2/s
+     Massflux[id1,id2]  = np.nansum(MM*dz)/np.nansum(dz)
+
      
      for iv in range(nbvar):
        tot=fVARtot[iv,:];Fi=alphai*fVAR[iv,:]; tophat=alphai*tophatVAR[iv,:]
