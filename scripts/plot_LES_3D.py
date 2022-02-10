@@ -1,5 +1,5 @@
 import netCDF4 as nc
-import pylab as plt
+#import pylab as plt
 import numpy as np
 import sys
 import time
@@ -12,7 +12,9 @@ import tools as tl
 import Constants as CC
 
 
-def main(data1D,data,plots,dataobjs,xy=None,zview=[],pathfig='.',nametitle='',avg=0,fluxes=0,idxzi2D=None):
+def main(data1D,data,plots,dataobjs,xy=None,zview=[],\
+         pathfig='.',nametitle='',\
+         avg=0,fluxes=0,idxzi2D=None,relative=None):
     if __name__== "__main__" :
       print('ok')
       title='_'.join(data.keys())
@@ -32,7 +34,7 @@ def main(data1D,data,plots,dataobjs,xy=None,zview=[],pathfig='.',nametitle='',av
           mf.plot2D(data1D,data,dataobjs,zz=zview[zz],pathfig=pathfig,nametitle=nametitle+'_'+zz,avg=avg,hatchlog=hchzview)
 
       if plots['mean']:
-        mf.plotmean(data1D,data,dataobjs=dataobjs,zz=zview,pathfig=pathfig,nametitle=nametitle,fluxes=fluxes)
+        mf.plotmean(data1D,data,dataobjs=dataobjs,zz=zview,pathfig=pathfig,nametitle=nametitle,fluxes=fluxes,relative=relative)
       
 
 
@@ -54,17 +56,20 @@ vars       = ['Reflectance','LWP','WT','THV','RNPM','RVT','THLM','DIVUV','REHU',
 vars       += ['SVT001','SVT002','SVT003','SVT004','SVT005','SVT006']
 
 #    With objects?
-objectchar = 1 #1
+objectchar = 0 #1
 
 #    Fluxes?
-fluxes     = 1 #WT by default
+fluxes     = 0 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':1, 'zview':1, 'mean':1}
+plots0     = {'cross':0, 'zview':1, 'mean':0}
 
 # Average over +/-xx grid points for cross section
 avg        = 0
+
+# Relative for mean profile (not used so far)
+relative   = None #['y']
 ##################################################
 
 ### Source Path
@@ -190,7 +195,7 @@ THV         = tl.createnew('THV',DATA,var1D)
 #THV         = tl.removebounds(THV)
 idxzi       = tl.findTHV3D(ZZ,THV,offset)
 
-idxzi2D    = idxzi
+idxzi2D    = deepcopy(idxzi)
 
 if ~np.isnan(idxlcl).all():
   idxlcl      = int(round(np.nanmean(idxlcl)))
@@ -213,6 +218,19 @@ zview0.update({'sublcl':idxsublcl
         ,'lcl':idxlcl
         ,'lfc':idxlfc
         ,'lnb':idxlnb})
+
+# Add zi relative
+idxzi = np.nanmean(idxzi)
+if case == 'FIRE':
+  idxzi = cloudtop
+zview0.update(
+        {'10zi' :int(round(0.1*idxzi))
+        ,'25zi' :int(round(0.25*idxzi))
+        ,'50zi' :int(round(0.5*idxzi))
+        ,'75zi' :int(round(0.75*idxzi))
+        ,'100zi':int(round(idxzi))
+        ,'125zi':int(round(1.25*idxzi))})
+
 print('zview ',zview0)
 
 
@@ -297,7 +315,9 @@ for vv in vars:
       vv        = vv2
 
     nametitle = nametitle0.format(var=vv,objch=objch,vtypch=vtypch,suffix=prefix)
-    main(data1D,data,plots,dataobjs,xy=xy,zview=zview,pathfig=pathfig,nametitle=nametitle,avg=avg,fluxes=fluxes,idxzi2D=idxzi2D)
+    main(data1D,data,plots,dataobjs,xy=xy,zview=zview,\
+         pathfig=pathfig,nametitle=nametitle,\
+         avg=avg,fluxes=fluxes,idxzi2D=idxzi2D,relative=relative)
 
 
 

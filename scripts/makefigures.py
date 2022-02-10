@@ -20,7 +20,7 @@ def coloryourself(start,end,nb):
    colors=np.vstack((color1,color2,color3))
    return colors
 
-def savefig(fig,ax,pathfig,title='',fts=15,xsize=(4,5),zmax=None,dpi=1000,quality=95,makepdf=True):
+def savefig(fig,ax,pathfig,title='',fts=15,xsize=(4,5),zmax=None,dpi=1000,quality=95,makepdf=False):
     plt.xticks(size=fts)
     plt.yticks(size=fts)
     plt.title(title)

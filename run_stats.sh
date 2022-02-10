@@ -28,14 +28,16 @@ hours=$3
 name='V0301'
 svt=($4 $5 $6)
 
-subcloud=0
+subcloud=1
 cloud=0
+sum='or'
 
 typs=(updraft downdraft downdraft downdraft)
 tracer=(${svt[0]}_WT ${svt[0]}_WT ${svt[1]}_WT ${svt[2]}_WT)
 len=${#typs[@]}
 
-for i in $(seq 0 $len)
+#for i in $(seq 0 $len)
+for i in $(seq $len $len)
 do
 typ="${typs[$i]}"
 trac="${tracer[$i]}"
@@ -49,7 +51,7 @@ echo $trac
 for hour in "${hours[@]}"
 do
 echo 'run'
-python stats_flux.py $typ $trac $sens $hour $case $name $subcloud $cloud
+python stats_flux.py $typ $trac $sens $hour $case $name $subcloud $cloud $sum
 done
 done
 
@@ -77,7 +79,7 @@ do
 echo 'All'
 echo $PWD
 echo $tracer
-#python stats_flux.py $typ $tracer $sens $hour $case $name 'or'
+#python stats_flux.py $typ $tracer $sens $hour $case $name $subcloud $cloud 'or'
 done
 done
 
