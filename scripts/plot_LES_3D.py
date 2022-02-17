@@ -34,7 +34,7 @@ def main(data1D,data,plots,dataobjs,xy=None,zview=[],\
           mf.plot2D(data1D,data,dataobjs,zz=zview[zz],pathfig=pathfig,nametitle=nametitle+'_'+zz,avg=avg,hatchlog=hchzview)
 
       if plots['mean']:
-        mf.plotmean(data1D,data,dataobjs=dataobjs,zz=zview,pathfig=pathfig,nametitle=nametitle,fluxes=fluxes,relative=relative)
+        mf.plotmean(data1D,data,dataobjs=dataobjs,zz=zview,pathfig=pathfig,nametitle=nametitle,fluxes=fluxes) #,relative=relative)
       
 
 
@@ -52,18 +52,19 @@ vtype   = sys.argv[5] #V0301
 
 ##################################################
 #    Variables of interest
-vars       = ['Reflectance','LWP','WT','THV','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+#vars       = ['Reflectance','LWP','WT','THV','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+vars       = ['RCT']
 vars       += ['SVT001','SVT002','SVT003','SVT004','SVT005','SVT006']
 
 #    With objects?
-objectchar = 0 #1
+objectchar = 1 #1
 
 #    Fluxes?
 fluxes     = 0 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':0, 'zview':1, 'mean':0}
+plots0     = {'cross':1, 'zview':0, 'mean':0}
 
 # Average over +/-xx grid points for cross section
 avg        = 0

@@ -211,7 +211,7 @@ N1       = len(listthrs)
 # Vmin (can be defined in units or volume in km^3)
 minchar = 'volume' #'volume' #unit
 if minchar == 'volume':
-    nbmins   = [0.005,0.01,0.02,0.05,0.10,0.25]
+    nbmins   = [0.005,0.01,0.02,0.05,0.10,0.25,0.50]
 else:
     nbmins   = [0,10,50,100,500,1000,5000,10000,20000]
 N2 = len(nbmins) #,50,100,500,1000,5000,10000,20000];

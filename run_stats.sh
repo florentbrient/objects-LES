@@ -36,8 +36,8 @@ typs=(updraft downdraft downdraft downdraft)
 tracer=(${svt[0]}_WT ${svt[0]}_WT ${svt[1]}_WT ${svt[2]}_WT)
 len=${#typs[@]}
 
-#for i in $(seq 0 $len)
-for i in $(seq $len $len)
+for i in $(seq 0 $len)
+#for i in $(seq $len $len)
 do
 typ="${typs[$i]}"
 trac="${tracer[$i]}"

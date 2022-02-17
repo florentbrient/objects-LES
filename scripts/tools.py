@@ -148,7 +148,22 @@ def _nanargmax(arr, axis):
    except ValueError:
      return np.nan
 
+def suffix_name(subcloud,nocloud):
+    if subcloud=='1':
+        subcloud=True
+        subprefix='.scld'
+    else:
+        subcloud=False
+        subprefix=''
 
+    if nocloud=='1':
+        nocloud=True
+        nocldprefix='.nocld'
+    else:
+        nocloud=False
+        nocldprefix=''
+    return subcloud,subprefix,nocloud,nocldprefix
+  
 def divergence(field, dx, axis=0):
     "return the divergence of a n-D field"
     #data3 = np.sum(data2,axis=0)
@@ -497,7 +512,8 @@ def cond2plot(case,prefix,boxch=False):
    xycas = {}
 #   xycas['IHOP']  = { '006':([150,350],[440,440]), # '006':([50,250],[410,410]
 #                      '008':([50,250],[410,410])} #[[x1,x2],[y1,y2]]
-   xycas['BOMEX'] = { '008':([160,320],[455,455]),  
+   xycas['BOMEX'] = { '006':([300,420],[459,459]), 
+                      '008':([160,320],[455,455]),  
                       '010':([420,510],[455,455]),  #([270,350],[474,474]),
                     } 
    xycas['FIRE'] = {'012':([420,600],[455,455]), #([270,350],[474,474]),
