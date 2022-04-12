@@ -20,6 +20,17 @@ def coloryourself(start,end,nb):
    colors=np.vstack((color1,color2,color3))
    return colors
 
+def colorBltoRed(nb):
+   # Make color bar
+   color1=np.linspace(0, 1, nb)
+   color2=np.linspace(0, 0, nb)
+   color3=np.linspace(1, 0, nb)
+   colors=np.vstack((color1,color2,color3))
+   #black =np.array([0,0,0])# for obs
+   #colors=np.vstack((colors.conj().transpose(), black)).conj().transpose()
+   return colors
+
+
 def savefig(fig,ax,pathfig,title='',fts=15,xsize=(4,5),zmax=None,dpi=1000,quality=95,makepdf=False):
     plt.xticks(size=fts)
     plt.yticks(size=fts)
@@ -347,7 +358,7 @@ def plotstats(datax,datay,data2=None,data3=None,logx=False,filesave=None,xlab=No
     if nbmin is not None:
       colors  = colorBltoRed(sz[0])
       ms      = [np.sqrt(n)/1.5 for n in nbmin]
-      print nbmin
+      print(nbmin)
       idx     = np.where(nbmin==10000)[0]
       msextra = ms[idx]
     else:
@@ -370,7 +381,7 @@ def plotstats(datax,datay,data2=None,data3=None,logx=False,filesave=None,xlab=No
       #l1, =ax.plot(datax[ij,:],datay[ij,:],color=color,linewidth=lw)
       #if logx:
       #  l1, =ax.semilogx(datax[ij,:],datay[ij,:],color=color,linewidth=lw)
-      print datay.shape
+      print(datay.shape)
       ax.scatter(datax[ij,:],datay[ij,:],marker=markers[0],s=ms,color=color)
       ax.plot(datax[ij,:],datay[ij,:],color=color,linewidth=lw)
 
@@ -389,7 +400,7 @@ def plotstats(datax,datay,data2=None,data3=None,logx=False,filesave=None,xlab=No
         #  ax.fill_between(datax[ij,:],mins2[0,:],mins2[1,:],color='grey',alpha=0.3)
 
       if mins is not None:
-        print mins
+        print(mins)
         ax.fill_between(datax[ij,:],mins[0,:],mins[1,:],color='grey',alpha=0.3)
 
         #l1, =ax.plot(extrax[0][ij,:],extray[0][ij,:],color=color,marker=markers[1],linewidth=lw)

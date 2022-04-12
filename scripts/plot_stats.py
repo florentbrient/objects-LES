@@ -20,7 +20,7 @@ def openfilestat(file):
   ijmin   = 5
   f       = open(file, 'r')
   tab     = [line.rstrip('\n').split() for line in f]
-  nametab = tab[2]
+  nametab = tab[3]
   Nmin    = len(tab[ijmin:])
   Nval    = len(tab[ijmin])  
   print(Nmin,Nval)
@@ -74,16 +74,22 @@ if len(typ_first)>2:
 NT        = len(typ_first)
 
 # Important info from filename
-#print(filename_input.split('.'))
-#file_short='_'.join(np.array(filename_input.split('.'))[[0,-2]])
-#file_short=file_short.replace('sel_', '') 
 
 filein0   = dir_in
-#fileout0 += 'stats.'+jointyp.join(typ)+'.'+''.join(selSVT)+'.LL.'+filename_input+'.3'+testch+'.txt'
 filein0  += 'stats.'+'TT'+'.'+'SS'+\
         '.LL.'+simu+'_HH'+subprefix+nocldprefix+\
         '.txt'
-#print(filein0)
+
+# out files
+dir_out     = "../data/figures/"+cas+"/";tl.mkdir(dir_out)
+dir_out    += simu+"/";tl.mkdir(dir_out)
+dir_out    += 'd_time/';tl.mkdir(dir_out)
+
+
+# Output filename
+namefile0=dir_out+'SSSS_VVVV_MM_NNNN'+subprefix+nocldprefix 
+# time_Var_Nmin_subcloud_nocloud
+
 
 for it,typ in enumerate(typs):
   filein1a = filein0.replace('TT',typ_first[it])
@@ -94,14 +100,13 @@ for it,typ in enumerate(typs):
       filein = filein1c.replace('LL',str(ll));
       print(filein)
       tab,nametab,Nmin,Nval,ijmin  = openfilestat(filein)
-      print(tab,nametab,Nmin,Nval,ijmin)
       if it==0 and il==0 and ih==0:
-        data=np.zeros((NT,NH,NL,Nmin,Nval)) #typs,hours,m,Vmin,Valeurs
+        data=np.zeros((NT,NH,NL,Nmin,Nval)) #typs,hours,m,Vmin,Variable
         
       for ij in range(Nmin):
         for ik in range(Nval):
           data[it,ih,il,ij,ik]=float(tab[ijmin+ij][ik])
-         
+
 # Info figure
 xxname=['time']
 unitx =['hours']
@@ -128,7 +133,8 @@ datax = np.arange(1,NH+1)*DH
 datax = np.repeat(datax,1,axis=0).reshape((1,NH))
 
 
-idx     = len(typs)-1 #typs.index('downdraftorupdraft')
+Nmax    = len(typs)-1 #typs.index('downdraftorupdraft')
+idx     = Nmax
 
 # Which m you want to plot (m=1, index 2)
 listplot = 2 
@@ -136,10 +142,16 @@ if len(listthrs)==1:
   listplot=listthrs[0]
 idxlist  = np.argmin(listplot==listthrs); print(idxlist)
 
+namefile0 = namefile0.replace('MM',str(listplot))
+
 for xx,xlab in enumerate(xxname):
-  for ij in range(Nmin):
-     for ik in range(1,Nval):
-        ylab = nametab[ik]
+  namefile1 = namefile0.replace('SSSS',xlab)
+  Nmintab   = data[idx,0,idxlist,:,0] # List of Vmin
+  #print('N: ',Nmintab) 
+  for ij,Nminx in enumerate(Nmintab):
+     namefile2 = namefile1.replace('NNNN',str(Nminx))
+     for ik,ylab in enumerate(nametab[1:]): #range(1,Nval):
+        namefile3 = namefile2.replace('VVVV',ylab)
         
         datay = data[idx,:,idxlist,ij,ik]
         datay = datay.reshape((1,NH))
@@ -147,11 +159,25 @@ for xx,xlab in enumerate(xxname):
         miny  = np.min(data[idx,:,idxlist,:,ik],axis=1) 
         maxy  = np.max(data[idx,:,idxlist,:,ik],axis=1)
         mins  = np.reshape((miny,maxy),(2,len(miny)))
+        
+        if len(typs)>1:
+          extrax,extray = [],[] 
+          #mins1         = []
+          for it in range(Nmax):
+            extrax.append(datax)
+            tmp = data[it,:,idxlist,ij,ik]
+            tmp = np.repeat(tmp,1,axis=0).reshape((1,NH))
+            extray.append(tmp)
+            print(typs[it],tmp)
+            #miny1  = np.min(data[it,:,idxlist,:,ik],axis=1) 
+            #maxy1  = np.max(data[it,:,idxlist,:,ik],axis=1)
+            #mins1.append(np.reshape((miny1,maxy1),(2,len(miny1))))
 
-        print(datay)
+        #print(datay)
         plt.plot(datax,datay);plt.show()
-
-        filesave='test'
+        
+        filesave = namefile3
+        
         mf.plotstats(datax,datay,filesave=filesave,xlab=xlab,ylab=ylab,\
                      unitx=unitx[xx],xaxis=levelx,yaxis=levely,\
                      mins=mins,extrax=extrax,extray=extray)
