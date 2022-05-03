@@ -90,22 +90,60 @@ dir_out    += 'd_time/';tl.mkdir(dir_out)
 namefile0=dir_out+'SSSS_VVVV_MM_NNNN'+subprefix+nocldprefix 
 # time_Var_Nmin_subcloud_nocloud
 
+#####################
+# Goal : reprodude nameobjs 
+# Is it relevant to do it here?
+# Need to be improved
+#
+# Objects characteristics (From plot_LES_3D.py)
+thrs   = 2
+thch   = str(thrs).zfill(2)
+# Minimal volume for object detection vmin
+# Brient et. al 19 (GRL): 0.25 km^3
+# By default : 0.02 km^3
+  
+# Select by? 
+minchar = 'volume' #unit
+if minchar == 'volume':
+    vmin   = 0.02
+    suffixmin = '_vol'+str(vmin) 
+elif minchar == 'unit':
+    nbmin  = 100 #100 #1000
+    suffixmin = '_nb'+str(nbmin)
+nbplus = tl.svttyp(cas,simu) #1
+# Object based on tracer concentration AND vertical velocity?
+AddWT  = 1
+typs2, objtyp = tl.def_object(thrs,nbplus=nbplus,AddWT=AddWT)
+print('TT ',typs2)
+typs2 = [ij+'_'+thch  for ij in typs2] 
+#print(typs2,objtyp)
+typs2.append('All')
 
-for it,typ in enumerate(typs):
+############################
+
+print(typs,typs2)
+data = {}
+for it,typ in enumerate(typs2):
+  print('color : ',typ)
+  #print(tl.findhatch(typs2[it],typ='color'))
   filein1a = filein0.replace('TT',typ_first[it])
-  filein1b = filein1a.replace('SS',sel_first[it])     
+  filein1b = filein1a.replace('SS',sel_first[it])   
   for ih,hh in enumerate(hours):
     filein1c = filein1b.replace('HH',hh); 
     for il,ll in enumerate(listthrs):
       filein = filein1c.replace('LL',str(ll));
       print(filein)
       tab,nametab,Nmin,Nval,ijmin  = openfilestat(filein)
-      if it==0 and il==0 and ih==0:
-        data=np.zeros((NT,NH,NL,Nmin,Nval)) #typs,hours,m,Vmin,Variable
+      if il==0 and ih==0:
+          data[typ] = np.zeros((NH,NL,Nmin,Nval))
+      #if it==0 and il==0 and ih==0:
+      #  data=np.zeros((NT,NH,NL,Nmin,Nval)) #[typs],hours,m,Vmin,Variable
         
       for ij in range(Nmin):
         for ik in range(Nval):
-          data[it,ih,il,ij,ik]=float(tab[ijmin+ij][ik])
+          #data[it,ih,il,ij,ik]=float(tab[ijmin+ij][ik])
+          data[typ][ih,il,ij,ik]=float(tab[ijmin+ij][ik])
+          #print(ih,il,ij,ik,data[typ][ih,il,ij,ik])
 
 # Info figure
 xxname=['time']
@@ -133,8 +171,11 @@ datax = np.arange(1,NH+1)*DH
 datax = np.repeat(datax,1,axis=0).reshape((1,NH))
 
 
-Nmax    = len(typs)-1 #typs.index('downdraftorupdraft')
-idx     = Nmax
+#Nmax   = len(typs2)-1 #typs.index('downdraftorupdraft')
+#idx     = Nmax
+Nmax   = typs2[:-1]
+idx    = typs2[-1]
+print('Nmax ',Nmax)
 
 # Which m you want to plot (m=1, index 2)
 listplot = 2 
@@ -146,39 +187,43 @@ namefile0 = namefile0.replace('MM',str(listplot))
 
 for xx,xlab in enumerate(xxname):
   namefile1 = namefile0.replace('SSSS',xlab)
-  Nmintab   = data[idx,0,idxlist,:,0] # List of Vmin
+  Nmintab   = data[idx][0,idxlist,:,0] # List of Vmin
   #print('N: ',Nmintab) 
-  for ij,Nminx in enumerate(Nmintab):
+  for ij,Nminx in enumerate(Nmintab):  # Vmin (0.005 for example)
+     print('Nmin ',ij,Nminx)
      namefile2 = namefile1.replace('NNNN',str(Nminx))
      for ik,ylab in enumerate(nametab[1:]): #range(1,Nval):
+        print('nametab ',ik,ylab) # ylab is the name of the value (surf, vol...)
         namefile3 = namefile2.replace('VVVV',ylab)
         
-        datay = data[idx,:,idxlist,ij,ik]
+        datay = data[idx][:,idxlist,ij,ik]
         datay = datay.reshape((1,NH))
+        print('y ',datay)
         
-        miny  = np.min(data[idx,:,idxlist,:,ik],axis=1) 
-        maxy  = np.max(data[idx,:,idxlist,:,ik],axis=1)
+        miny  = np.min(data[idx][:,idxlist,:,ik],axis=1) 
+        maxy  = np.max(data[idx][:,idxlist,:,ik],axis=1)
         mins  = np.reshape((miny,maxy),(2,len(miny)))
         
         if len(typs)>1:
           extrax,extray = [],[] 
           #mins1         = []
-          for it in range(Nmax):
+          for it in Nmax: #range(Nmax):
             extrax.append(datax)
-            tmp = data[it,:,idxlist,ij,ik]
+            tmp = data[it][:,idxlist,ij,ik]
             tmp = np.repeat(tmp,1,axis=0).reshape((1,NH))
             extray.append(tmp)
-            print(typs[it],tmp)
+            print('y ',it,extray)
+            #print(typs[it],tmp)
             #miny1  = np.min(data[it,:,idxlist,:,ik],axis=1) 
             #maxy1  = np.max(data[it,:,idxlist,:,ik],axis=1)
             #mins1.append(np.reshape((miny1,maxy1),(2,len(miny1))))
 
         #print(datay)
-        plt.plot(datax,datay);plt.show()
+        #plt.plot(datax,datay);plt.show()
         
         filesave = namefile3
         
-        mf.plotstats(datax,datay,filesave=filesave,xlab=xlab,ylab=ylab,\
+        mf.plotstats(typs2,datax,datay,filesave=filesave,xlab=xlab,ylab=ylab,\
                      unitx=unitx[xx],xaxis=levelx,yaxis=levely,\
                      mins=mins,extrax=extrax,extray=extray)
 

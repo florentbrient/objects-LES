@@ -428,7 +428,7 @@ def def_object(thrs,nbplus=0,AddWT=0):
   #thch   = str(thrs).zfill(2)
   #nbmin  = 100 #100 #1000
   objtyp = ['updr','down','down','down']
-  objnb  = ['001' ,'001' ,'003' ,'002' ]
+  objnb  = ['001' ,'001' ,'002' ,'003' ]
   if nbplus == 1:
      objnb = [str(int(ij)+3).zfill(3) for ij in objnb]
      

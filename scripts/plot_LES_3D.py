@@ -64,7 +64,7 @@ fluxes     = 0 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':1, 'zview':0, 'mean':0}
+plots0     = {'cross':0, 'zview':0, 'mean':1}
 
 # Average over +/-xx grid points for cross section
 avg        = 0

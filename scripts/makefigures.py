@@ -344,10 +344,14 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
 
 
 
-def plotstats(datax,datay,data2=None,data3=None,logx=False,filesave=None,xlab=None,ylab=None,unitx=None,xaxis=None,yaxis=None,size=[10.0,5.0],extrax=None,extray=None,nbmin=None,mins=None,mins1=None,mins2=None):
+def plotstats(nameobjs,datax,datay,\
+              data2=None,data3=None,logx=False,filesave=None,\
+              xlab=None,ylab=None,unitx=None,xaxis=None,yaxis=None,\
+              size=[10.0,5.0],extrax=None,extray=None,nbmin=None,\
+              mins=None,mins1=None,mins2=None):
 # subroutine to plot the evolution of object characteristics with threshold defining objects
 # related to the routine plot_stats.py
-    colors  = ['b','r','purple','g','k']
+    #colors  = ['r','b','purple','g','k']
     markers = ['o','x','s','d']
     lw      = 2
     fts     = 15
@@ -367,12 +371,15 @@ def plotstats(datax,datay,data2=None,data3=None,logx=False,filesave=None,xlab=No
     if logx:
       datax[datax==0.]=np.nan
       datay[datay==0.]=np.nan
+      
+    # colors
+    colors = [tl.findhatch(ij,typ='color') for ij in nameobjs]
 
 
 
     for ij in range(sz[0]):
       #if colors[0]=='r':
-      color = colors[-1] #[ij]
+      color = 'k' #colors[-1] #[ij]
       #else:
       #  color = colors[:,ij]
       #if sz[0]==1:
@@ -382,7 +389,7 @@ def plotstats(datax,datay,data2=None,data3=None,logx=False,filesave=None,xlab=No
       #if logx:
       #  l1, =ax.semilogx(datax[ij,:],datay[ij,:],color=color,linewidth=lw)
       print(datay.shape)
-      ax.scatter(datax[ij,:],datay[ij,:],marker=markers[0],s=ms,color=color)
+      ax.scatter(datax[ij,:],datay[ij,:],marker=markers[0],s=ms,color=color) #color)
       ax.plot(datax[ij,:],datay[ij,:],color=color,linewidth=lw)
 
       if extrax is not None and extray is not None:
