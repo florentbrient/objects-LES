@@ -150,12 +150,12 @@ xxname=['time']
 unitx =['hours']
 ymin = dict(); ymax = dict()
 ymin['rvol']=0.
-ymin['rTHLMflux']=0.;ymin['rRNPMflux']=0.
-ymax['rTHLMflux']=99.;ymax['rRNPMflux']=99.
+#ymin['rTHLMflux']=0.;ymin['rRNPMflux']=0.
+#ymax['rTHLMflux']=109.;ymax['rRNPMflux']=109.
 levely=dict()
 levely['rvol']=range(0,40,10)
-levely['rTHLMflux']=range(0,120,20)
-levely['rRNPMflux']=range(0,120,20)
+levely['rTHLMflux']=range(0,130,20)
+levely['rRNPMflux']=range(0,130,20)
 levelx=dict()
 xx   = 2
 levelx['time']=range(0,int(hours[-1])+2*xx,xx)
@@ -192,7 +192,7 @@ for xx,xlab in enumerate(xxname):
   for ij,Nminx in enumerate(Nmintab):  # Vmin (0.005 for example)
      print('Nmin ',ij,Nminx)
      namefile2 = namefile1.replace('NNNN',str(Nminx))
-     for ik,ylab in enumerate(nametab[1:]): #range(1,Nval):
+     for ik,ylab in enumerate(nametab): #[1:]): #range(1,Nval):
         print('nametab ',ik,ylab) # ylab is the name of the value (surf, vol...)
         namefile3 = namefile2.replace('VVVV',ylab)
         

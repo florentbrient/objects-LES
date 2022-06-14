@@ -226,7 +226,7 @@ Massflux = np.zeros((N1,N2))
 maketest = False
 testch   = ''
 if maketest:
-  listthrs = [3] #[2]
+  listthrs = [2] #[2]
   #nbmins   = [nbmins[4]] #[0,10,50,100,500,1000,5000,10000,20000] #[10000]
   testch   = '.test'
 

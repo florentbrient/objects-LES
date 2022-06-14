@@ -15,7 +15,7 @@ hours=$3
 name='V0301'
 svt=($4 $5 $6)
 
-subcloud=1
+subcloud=0
 cloud=0
 sum='or'
 

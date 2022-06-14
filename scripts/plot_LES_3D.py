@@ -52,9 +52,10 @@ vtype   = sys.argv[5] #V0301
 
 ##################################################
 #    Variables of interest
-#vars       = ['Reflectance','LWP','WT','THV','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
-vars       = ['RCT']
+vars       = ['Reflectance','LWP','WT','THV','THT','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+#vars       = ['RCT','UT','VT']
 vars       += ['SVT001','SVT002','SVT003','SVT004','SVT005','SVT006']
+#vars       = ['RNPM']
 
 #    With objects?
 objectchar = 1 #1
@@ -64,7 +65,7 @@ fluxes     = 0 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':0, 'zview':0, 'mean':1}
+plots0     = {'cross':1,'zview':1, 'mean':1}
 
 # Average over +/-xx grid points for cross section
 avg        = 0
@@ -111,7 +112,8 @@ if objectchar:
   # Select by?
   minchar = 'volume' #unit
   if minchar == 'volume':
-      vmin   = 0.02
+      vmin   = 0.02 # by default
+      #vmin   = 0
       suffixmin = '_vol'+str(vmin)
   elif minchar == 'unit':
       nbmin  = 100 #100 #1000
@@ -229,6 +231,10 @@ zview0.update(
         ,'25zi' :int(round(0.25*idxzi))
         ,'50zi' :int(round(0.5*idxzi))
         ,'75zi' :int(round(0.75*idxzi))
+        ,'80zi' :int(round(0.80*idxzi))
+        ,'85zi' :int(round(0.85*idxzi))
+        ,'90zi' :int(round(0.90*idxzi))
+        ,'95zi' :int(round(0.95*idxzi))
         ,'100zi':int(round(idxzi))
         ,'125zi':int(round(1.25*idxzi))})
 

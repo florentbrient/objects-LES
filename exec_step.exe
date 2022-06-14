@@ -10,10 +10,13 @@ diurnal=$5
 # sxtropics
 path=`pwd`
 
-case='FIRE' #'IHOP' #'AYOTTE' #'RICO' #'IHOP' #'BOMEX' 'FIRE' 'ARMCU'
+case='FIRE' #'AYOTTE' #'RICO' #'IHOP' #'BOMEX' 'FIRE' 'ARMCU'
 sens='Ls2x0' #'24Sx0' #'Ru0x0' #'L2RA2' 'Ls2x0' 'LNOCF' 'Ru0NC' 'Ru0x0'
-hour=('006','012','018','024')
-#hour=('002','004','006','008')
+#hour=('006','012','018','024')
+#hour=('003','006','009','012','015','018','021','024')
+#hour=('002','004','006','008','010','012')
+#hour=('008','012')
+hour=('012')
 
 svt=(SVT001 SVT002 SVT003)
 svt=(SVT004 SVT005 SVT006)
@@ -33,11 +36,6 @@ hours=${hour//,/' '}
 for hh in $hours
 do
   file=${path}/data/${case}/${sens}/sel_${sens}.1.V0301.${hh}.nc4
-  #python identify_downdrafts_and_updrafts.py updraft   ${svt[0]} $file
-  #python identify_downdrafts_and_updrafts.py downdraft ${svt[0]} $file
-  #python identify_downdrafts_and_updrafts.py updraft   ${svt[1]} $file
-  #python identify_downdrafts_and_updrafts.py downdraft ${svt[1]} $file
-  #python identify_downdrafts_and_updrafts.py downdraft ${svt[2]} $file
   python identify_downdrafts_and_updrafts.py updraft   ${svt[0]}+WT $file
   python identify_downdrafts_and_updrafts.py downdraft ${svt[0]}+WT $file
   python identify_downdrafts_and_updrafts.py updraft   ${svt[1]}+WT $file
