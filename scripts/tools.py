@@ -33,7 +33,7 @@ def openfilestat(file):
 
 def opennc(path,info,name,hour,vtype='V0301',var=None,nc=None,rmsimu=False):
     file0 = path+"{cas}/{simu}/"
-    namefile = "{simu}.1.{vtype}.TTTT.nc4"
+    namefile = "sel_{simu}.1.{vtype}.TTTT.nc4"
     if 'short' in info.keys():
        namefile = 'Short_'+namefile
     if nc is not None:
@@ -198,7 +198,7 @@ def tht2temp(THT,P):
    temp = THT*exner
    return temp
 
-def findTHV(DATA):
+def findTHV(DATA,offset=0.25):
    RVT = np.nanmean(DATA['RVT'],axis=(1,2,))
    THT = np.nanmean(DATA['THT'],axis=(1,2,))
    try:
@@ -208,7 +208,7 @@ def findTHV(DATA):
    a1  = 0.61
    THV = THT * (np.ones(THT.shape) +a1*RVT - RCT)
    THVint = integrate.cumtrapz(THV)/np.arange(1,len(THV))
-   offset = 0.25
+   #offset = 0.25
    DT  = THV[:-1]-(THVint+offset)
    idxpbl = np.argmax(DT>0)
    print(THV,THVint,DT)
@@ -252,8 +252,7 @@ def smooth(y, box_pts):
     #print y, box, y_smooth
     return y_smooth
 
-def findpbltop(typ,DATA,idx=None):
-   Z   = DATA['ZHAT'][:]/1000.
+def findpbltop(typ,DATA,idx=None,offset=0.25):
    RVT = np.nanmean(DATA['RVT'],axis=(1,2,))
    RNPM= np.nanmean(DATA['RNPM'],axis=(1,2,))
    THT = np.nanmean(DATA['THT'],axis=(1,2,))
@@ -271,11 +270,15 @@ def findpbltop(typ,DATA,idx=None):
    elif typ == 'PBLhRH':
      data   = findrh(RVT,tht2temp(THT,P),P)
      idx    = np.argmax(data)
-     toppbl = Z[idx]
-     grad   = Z[idx]
-       
+   elif typ == 'THV':
+     idx    = findTHV(DATA,offset=offset)
+   elif typ == 'THLM':
+     THLMint = integrate.cumtrapz(THLM)/np.arange(1,len(THLM))
+     DT      = THLM[:-1]-(THLMint+offset)
+     idx     = np.argmax(DT>0)
 
    if 'grad' in typ: # Not the best because of the first layer
+     Z   = DATA['ZHAT'][:]/1000.
      grad    = abs(np.gradient(data,Z))
      if idx == None:
        idx  = _nanargmax(grad, axis=0) #local gradient
@@ -285,6 +288,9 @@ def findpbltop(typ,DATA,idx=None):
      print(idx,toppbl,Z[idx])
      #plt.plot(grad,Z);plt.show()
      #plt.plot(data,Z);plt.show()
+   else:
+     toppbl = np.nan #Z[idx]
+     grad   = np.nan #Z[idx]
    return idx,toppbl,grad
 
 # Create new variable
@@ -614,6 +620,25 @@ def selectdata(zyx,data,slct=None,avg=0):
        print('Problem with slct in selectdata')
 
    return tmp,axis
+
+def gridsize(DATA,var1D):
+#var1D  = ['vertical_levels','W_E_direction','S_N_direction'] #Z,Y,X
+    data1D,nzyx,sizezyx = [OrderedDict() for ij in range(3)]
+    for ij in var1D:
+        data1D[ij]  = DATA[ij][:]/1000. #km #tl.removebounds(DATA[ij][:])
+        nzyx[ij]    = data1D[ij][1]-data1D[ij][0]
+        sizezyx[ij] = len(data1D[ij])
+
+    nxny   = nzyx[var1D[1]]*nzyx[var1D[2]] #km^2
+    ALT    = data1D[var1D[0]]
+    dz     = [0.5*(ALT[ij+1]-ALT[ij-1]) for ij in range(1,len(ALT)-1)]
+    dz.insert(0,ALT[1]-ALT[0])
+    dz.insert(-1,ALT[-1]-ALT[-2])
+    nxnynz = np.array([nxny*ij for ij in dz]) # volume of each level
+    nxnynz = np.repeat(np.repeat(nxnynz[:, np.newaxis, np.newaxis]
+                             , sizezyx[var1D[1]], axis=1), sizezyx[var1D[2]], axis=2)
+
+    return data1D,ALT,dz,nzyx,nxnynz,sizezyx
      
 
 def selectdiag(zyx,xy1,xy2):
@@ -786,6 +811,22 @@ def findlfc(idxlcl,RVT,T,z):
       idxlfc[idxlfc<idxlcl]  = np.nan
       idxlnb[((idxlnb<idxlfc) | (idxlnb<idxlcl))] = np.nan
     return idxlfc,lfc,idxlnb,lnb
+
+def findinv(DATA,inv,var1D,namez,offset=0.25):
+    # Routine to find inversion
+    # Goal : add multiple definition
+    # namez = vertical_levels
+    #DATA    = nc.Dataset(file,'r')
+    if inv=='THV' or inv=='THLM':
+        z           = DATA[namez][:]  # m
+        if inv in DATA.variables.keys(): 
+            data = DATA[inv] 
+        else:
+            data = createnew(inv,DATA,var1D)
+        ss          = data.shape
+        ZZ          = np.repeat(np.repeat(z[ :,np.newaxis, np.newaxis],ss[1],axis=1),ss[2],axis=2)
+        idxzi       = findTHV3D(ZZ,data,offset)
+    return idxzi
 
 def Interp(lat,lon,data,latI,lonI):
     ip = interpolate.interp2d(lon[:], lat[:], data)

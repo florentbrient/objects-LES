@@ -52,10 +52,10 @@ vtype   = sys.argv[5] #V0301
 
 ##################################################
 #    Variables of interest
-vars       = ['Reflectance','LWP','WT','THV','THT','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
+#vars       = ['Reflectance','LWP','WT','UT','VT','THV','THT','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
 #vars       = ['RCT','UT','VT']
-vars       += ['SVT001','SVT002','SVT003','SVT004','SVT005','SVT006']
-#vars       = ['RNPM']
+#vars       += ['SVT001','SVT002','SVT003','SVT004','SVT005','SVT006']
+vars       = ['RNPM']
 
 #    With objects?
 objectchar = 1 #1
@@ -65,7 +65,7 @@ fluxes     = 0 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':1,'zview':1, 'mean':1}
+plots0     = {'cross':0,'zview':0, 'mean':1}
 
 # Average over +/-xx grid points for cross section
 avg        = 0
@@ -196,15 +196,21 @@ ZZ          = np.repeat(np.repeat(z[ :,np.newaxis, np.newaxis],ss[1],axis=1),ss[
 offset      = 0.25
 THV         = tl.createnew('THV',DATA,var1D)
 #THV         = tl.removebounds(THV)
-idxzi       = tl.findTHV3D(ZZ,THV,offset)
 
-idxzi2D    = deepcopy(idxzi)
+
+# Important: Define Boundary layer (based on theta_l by default))
+#idxzi       = tl.findTHV3D(ZZ,THV,offset)
+inv               = 'THLM'
+idxzi,toppbl,grad = tl.findpbltop(inv,DATA,offset=offset)
+namez             = var1D[0]
+idxzi2D           = tl.findinv(DATA,inv,var1D,namez,offset=offset)
 
 if ~np.isnan(idxlcl).all():
   idxlcl      = int(round(np.nanmean(idxlcl)))
+  idxsublcl     = int(round(idxlcl/2.))
 else:
-  idxlcl      = 62
-idxsublcl     = int(round(idxlcl/2.))
+  idxlcl      = np.nan
+  idxsublcl   = np.nan
 if ~np.isnan(idxlfc).all():
   idxlfc      = int(round(np.nanmean(idxlfc)))
 if ~np.isnan(idxlnb).all():
@@ -223,9 +229,9 @@ zview0.update({'sublcl':idxsublcl
         ,'lnb':idxlnb})
 
 # Add zi relative
-idxzi = np.nanmean(idxzi)
-if case == 'FIRE':
-  idxzi = cloudtop
+#idxzi = np.nanmean(idxzi)
+#if case == 'FIRE':
+#  idxzi = cloudtop
 zview0.update(
         {'10zi' :int(round(0.1*idxzi))
         ,'25zi' :int(round(0.25*idxzi))
@@ -235,9 +241,10 @@ zview0.update(
         ,'85zi' :int(round(0.85*idxzi))
         ,'90zi' :int(round(0.90*idxzi))
         ,'95zi' :int(round(0.95*idxzi))
+        ,'97zi' :int(round(0.97*idxzi))
         ,'100zi':int(round(idxzi))
+        ,'105zi':int(round(1.05*idxzi))
         ,'125zi':int(round(1.25*idxzi))})
-
 print('zview ',zview0)
 
 
@@ -256,7 +263,7 @@ for typ in typs:
     
     # new version (volume)
     tmpmask = tl.do_unique(deepcopy(dataobj))*nxnynz
-    print('tmpmask ',tmpmask[0,:,0])
+    #print('tmpmask ',tmpmask[0,:,0])
     dataobjs[nameobj],nbr  = tl.do_delete2(dataobj,tmpmask,vmin,rename=True)
     
     #print nbr,dataobjs[nameobj].shape,np.max(dataobjs[nameobj])
@@ -264,12 +271,24 @@ for typ in typs:
   except:
     dataobjs[nameobj] = None
   #mask.append(tl.do_unique(dataobjs[nameobj]))
-  #print mask,dataobjs[nameobj],
+  #print mask,dataobjs[nameobj]
+  
+print('Keys 1 ',dataobjs.keys())
+print(DATA.keys())
+if 'RCT' not in DATA.keys():
+    for ij in dataobjs.keys():
+        if 'SVT002' in ij:
+          del(dataobjs[ij])           
+    dataobjs[dataobjs.keys().replace('003','002')] = dataobjs.pop()
+    nameobjs = dataobjs.keys()  
+print('Keys 2 ',dataobj.keys())
 
 if len(mask)>0: # and fluxes:
    nameobj   = 'All'
    nameobjs += [nameobj]
-   dataobjs[nameobj] = np.sum(mask,axis=0)
+   mask0    = np.sum(mask,axis=0)
+   mask0[mask0>1] =1     
+   dataobjs[nameobj] = mask0 #np.sum(mask,axis=0)
 
 for ij in dataobjs.keys():
   print('NAME : ',ij,np.max(dataobjs[ij]))

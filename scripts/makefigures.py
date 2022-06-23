@@ -68,12 +68,14 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
 
     styles  = ['-','--','-.',':']
     zzplot  = {'cloudbase':'--','cloudtop':'--'
-             ,'lcl':'-','lfc':'-','lnb':'-'}
+             ,'lcl':':','lfc':':','lnb':':'
+             ,'100zi':'-'}
     zzcolor = {'cloudbase':'k','cloudtop':'k'
-             ,'lcl':'gray','lfc':'gray','lnb':'gray'}
+             ,'lcl':'blue','lfc':'red','lnb':'green'
+             ,'100zi':'k'}
     lw      = 2
     lw2     = 0.5
-    fts     = 12.0
+    fts     = 18
 
     meanch    = ['Mean','Anom']
     if len(dataobjs)==0:
@@ -92,11 +94,19 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
 
     # plot error bar every Di layers
     Di       = 4
+    
+    # Miminal fraction to plot object
+    epsilon = 0.005 #0.5%
 
     frac = {}; slctobjs={}; stdobjs ={}; numobj={}; nbobj={}
     time1  = time.time()
     if dataobjs is not None:
-      for iobj,obj in enumerate(dataobjs.keys()):
+      keys = list(dataobjs.keys())
+      if not(fluxes or var=='Frac'):
+          keys.remove('All')
+      print(keys)
+      print(type(keys))
+      for iobj,obj in enumerate(keys):
         if dataobjs[obj] is not None:
           #print dataobjs[obj].shape
           zm           = deepcopy(dataobjs[obj])
@@ -145,14 +155,16 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
 
       # plot objects
       if dataobjs is not None:
-        for iobj,obj in enumerate(dataobjs.keys()):
+        for iobj,obj in enumerate(keys):
           if dataobjs[obj] is not None:
             color    = tl.findhatch(obj,typ='color')
             tmpobj   = slctobjs[obj][field]
             #if field == 'Anom':  # Only for Anom?
             if fluxes or var=='Frac':
               tmpobj = tmpobj*frac[obj]
-              
+            else: 
+              #tmpobj = tmpobj[frac[obj]>epsilon]
+              tmpobj = np.ma.masked_where(frac[obj]<epsilon,tmpobj)
             if plotstd:
               #print 'every line : ',nbobj[obj],nbobjmax
               # Plot every line
@@ -199,7 +211,8 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
       ax.get_yaxis().set_tick_params(direction='out')
       ax.get_xaxis().set_tick_params(direction='out')
       # Save figures
-      savefig(fig,ax,pathfig,title=title,fts=fts)
+      xsize = (6,8)
+      savefig(fig,ax,pathfig,title=title,fts=fts,xsize=xsize)
 
 
 # cross
