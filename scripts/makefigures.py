@@ -216,7 +216,8 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
 
 
 # cross
-def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=0,hatchlog=False,idxzi2D=None):
+def plot2D(data1D,data,dataobjs,xy=None,zz=None,subdom=None,pathfig='./'\
+           ,nametitle=None,avg=0,hatchlog=False,idxzi2D=None):
     # Plot cross section
     #      z-view
 
@@ -225,13 +226,16 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
       slct    = (0,xy)
       suffplot='x'+str(xy[0,0])+str(xy[0,1])+'_y'+str(xy[1,0])+str(xy[1,1])
       xsize   = (12,6)
-    elif zz is not None:
+    if zz is not None:
       nameplot='zview'
       slct    = (1,zz)
       suffplot='z'+str(zz)
+      if xy is not None:
+          slct = (2,xy,zz)
+          suffplot += '_subdom' 
       xsize   = (12,9)
     else:
-      print('Problem with plotcross')
+      print('Problem with plot2D')
       
     var,datav = opendata(data)
 
@@ -310,12 +314,16 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
 #      ax.imshow(img, extent=[0, max(axis[0]), 0, max(axis[1])]) #, aspect='auto')
 
       x0,y0 = axis[1],axis[0]
-      if xy is not None:
+      if xy is not None and zz is None:
           if xy[0,0] != xy[0,1]:
               x0 = [ij+xy[0,0] for ij in x0]
           elif xy[1,0] != xy[1,1]:
               x0 = [ij+xy[1,0] for ij in x0]
+          #if zz is not None:
+          #    y0 = [ij+xy[1,0] for ij in y0]
+      print('x0 ',x0,y0)
       xx, yy = np.meshgrid(x0,y0)
+      print('x0 ',xx,yy)
 
       cmap = cmaps['Mean']
       norm = None
@@ -353,6 +361,11 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,pathfig='./',nametitle=None,avg=
 
       if zminmax is not None:
          ax.set_ylim(zminmax)
+      if subdom is not None:
+         ss=subdom
+         ax.set_xlim(zyx[2][ss[0,:]])
+         ax.set_ylim(zyx[1][ss[1,:]])
+         title+='_subdom'
       savefig(fig,ax,pathfig,title=title,fts=fts,xsize=xsize)
 
 
@@ -388,19 +401,8 @@ def plotstats(nameobjs,datax,datay,\
     # colors
     colors = [tl.findhatch(ij,typ='color') for ij in nameobjs]
 
-
-
     for ij in range(sz[0]):
-      #if colors[0]=='r':
       color = 'k' #colors[-1] #[ij]
-      #else:
-      #  color = colors[:,ij]
-      #if sz[0]==1:
-      #  color = [0.5,0,0.5]
-        #print colors
-      #l1, =ax.plot(datax[ij,:],datay[ij,:],color=color,linewidth=lw)
-      #if logx:
-      #  l1, =ax.semilogx(datax[ij,:],datay[ij,:],color=color,linewidth=lw)
       print(datay.shape)
       ax.scatter(datax[ij,:],datay[ij,:],marker=markers[0],s=ms,color=color) #color)
       ax.plot(datax[ij,:],datay[ij,:],color=color,linewidth=lw)
@@ -436,20 +438,27 @@ def plotstats(nameobjs,datax,datay,\
           xx = xaxis[xlab]
           barloc = float(xx[-1])-(xx[1]-xx[0])
           #print barloc+0.3*(xx[1]-xx[0]) # used to be 24
-          Delta = 0.2 #1.0/float(len(extrax))
-          ax.errorbar(barloc+Delta*(xx[1]-xx[0]),np.nanmean(datay,axis=1),yerr=np.std(datay,axis=1),marker=markers[0],markersize=np.sqrt(ms),color='k')
+          Delta = (xx[1]-xx[0])/(2*len(extrax)) #0.2 #1.0/float(len(extrax))
+          xpos  = barloc+2*Delta
+          print('loc: ',barloc,Delta,xpos)
+          ax.errorbar(xpos,np.nanmean(datay,axis=1),yerr=np.std(datay,axis=1),marker=markers[0],markersize=np.sqrt(ms),color='k')
+          
           if extrax is not None and extray is not None:
             for ik in range(len(extrax)):
               #print 'ik: ',ik,barloc+(ik*Delta)*(xx[1]-xx[0]),colors[ik]
-              ax.errorbar(barloc+((ik+2)*Delta)*(xx[1]-xx[0]),np.nanmean(extray[ik],axis=1),yerr=np.nanstd(extray[ik],axis=1),marker=markers[1],markersize=np.sqrt(ms),color=colors[ik])
-              ax.scatter(extrax[0][ij,idx],extray[0][ij,idx]+extray[1][ij,idx],marker=markers[0],s=msextra,edgecolors='k',color='none')
+              # plot mean for all object type
+              xpos += Delta #barloc+((ik+2)*Delta)#*(xx[1]-xx[0])
+              ax.errorbar(xpos,np.nanmean(extray[ik],axis=1),yerr=np.nanstd(extray[ik],axis=1),marker=markers[1],markersize=np.sqrt(ms),color=colors[ik])
+              
+              # plot sum updraft and downdraft  (to be update)
+              #ax.scatter(extrax[0][ij,idx],extray[0][ij,idx]+extray[1][ij,idx],marker=markers[0],s=msextra,edgecolors='k',color='none')
            
-            #ax.errorbar(barloc+0.3*(xx[1]-xx[0]),np.mean(extray[0],axis=1),yerr=np.std(extray[0],axis=1),marker=markers[1],markersize=np.sqrt(ms),color='k')
-            #ax.errorbar(barloc+0.7*(xx[1]-xx[0]),np.mean(extray[1],axis=1),yerr=np.std(extray[1],axis=1),marker=markers[2],markersize=np.sqrt(ms),color='k')
-            #print filesave,np.mean(datay,axis=1),np.mean(extray[0],axis=1),np.mean(extray[1],axis=1)
-            #print filesave,np.std(datay,axis=1),np.std(extray[0],axis=1),np.std(extray[1],axis=1)
-            # plot extra circle for downdraft + updraft
-            ax.scatter(extrax[0][ij,idx],extray[0][ij,idx]+extray[1][ij,idx],marker=markers[0],s=msextra,edgecolors='k',color='none')
+            # plot extra circle for all objects
+            #print(np.shape(extray))
+            #extray_all=[extray[yy][ij,idx] for yy in range(len(extray))]
+            #print('ee ',extrax[0][ij,idx],extray,extray_all)
+            #ax.scatter(extrax[0][ij,idx],extray_all,marker=markers[0],s=msextra,edgecolors='k',color='none')
+                       #extray[0][ij,idx]+extray[1][ij,idx]
 
         
     if yaxis is not None:

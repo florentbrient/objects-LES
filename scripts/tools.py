@@ -585,7 +585,9 @@ def infosfigures(cas, var, mtyp='Mean'):
 
 # Axis
 def selectdata(zyx,data,slct=None,avg=0):
+   datatmp = data 
    if slct is not None:
+       
      if slct[0]==0: #xy
        xp,yp = 0,0
        xy    = slct[1]
@@ -599,26 +601,43 @@ def selectdata(zyx,data,slct=None,avg=0):
 
        tmp  = np.zeros((len(axis[0]),len(axis[1])))
        for ij in range(xy.shape[1]):
-        tmp0      = data[:,xy[1,ij]-yp:xy[1,ij]+yp+1:,xy[0,ij]-xp:xy[0,ij]+xp+1]
+        tmp0      = datatmp[:,xy[1,ij]-yp:xy[1,ij]+yp+1:,xy[0,ij]-xp:xy[0,ij]+xp+1]
         tmp0      = resiz(tmp0)
         if len(tmp0.shape)>1:
           tmp[:,ij] = np.nanmean(tmp0,axis=1)
         else:
           tmp[:,ij] = tmp0
+          
+     #if slct[0]==2: #useless
+     #    xy    = slct[1]
+     #    idxx  = np.arange(xy[1,0],xy[1,1])
+     #    idxy  = np.arange(xy[0,0],xy[0,1])
+     #    axis = [zyx[0],zyx[1][idxy],zyx[2][idxx]]
+     #    print('axis 0 ',axis)
+     #    idxx, idxy = np.meshgrid(idxx, idxy)
+     #    datatmp  = datatmp[:,idxy, idxx]
+     # #print('SIZE ',np.shape(datatmp),axis)
 
-     elif slct[0]==1: #zview
+
+     if slct[0]==1: # or slct[0]==2: #zview
        zp   = avg
-       zz   = slct[1]
+       zz   = slct[-1]
        #print zz,slct
+       #if slct[0]!=2:
        axis = [zyx[1],zyx[2]]
-       if len(data.shape)==3:
-         tmp0 = data[zz-zp:zz+zp+1,:,:]
+       #else:
+       #axis = [axis[1],axis[2]]
+       #  print('axis 1 ',axis)
+       #if slct[0]==2:
+       #  axis  = [xy[:,0],xy[:,1]]  
+       if len(datatmp.shape)==3:
+         tmp0 = datatmp[zz-zp:zz+zp+1,:,:]
          tmp  = np.nanmean(tmp0,axis=0)
        else:
-         tmp  = data
+         tmp  = datatmp
      else: 
        print('Problem with slct in selectdata')
-
+   #stop
    return tmp,axis
 
 def gridsize(DATA,var1D):

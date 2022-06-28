@@ -30,8 +30,12 @@ def main(data1D,data,plots,dataobjs,xy=None,zview=[],\
         mf.plot2D(data1D,data,dataobjs,xy=xy,pathfig=pathfig,nametitle=nametitle,avg=avg,hatchlog=hchcross,idxzi2D=idxzi2D)
 
       if plots['zview']:
+        subdom = None 
+        #subdom    = np.array(([40,200],[280,440]))          
         for zz in zview:
-          mf.plot2D(data1D,data,dataobjs,zz=zview[zz],pathfig=pathfig,nametitle=nametitle+'_'+zz,avg=avg,hatchlog=hchzview)
+          mf.plot2D(data1D,data,dataobjs,subdom=subdom,zz=zview[zz],\
+                    pathfig=pathfig,nametitle=nametitle+'_'+zz,\
+                    avg=avg,hatchlog=hchzview)
 
       if plots['mean']:
         mf.plotmean(data1D,data,dataobjs=dataobjs,zz=zview,pathfig=pathfig,nametitle=nametitle,fluxes=fluxes) #,relative=relative)
@@ -52,10 +56,11 @@ vtype   = sys.argv[5] #V0301
 
 ##################################################
 #    Variables of interest
-#vars       = ['Reflectance','LWP','WT','UT','VT','THV','THT','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'RNPM','RVT','THLM','RCT','THV','DIVUV','REHU','PRW','LWP','LCL','LFC','LNB']
-#vars       = ['RCT','UT','VT']
+#vars       = ['Reflectance','LWP','WT','UT','VT','PABST','THV','THT','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'PRW','LWP','LCL','LFC','LNB']
+vars       = ['REHU','WINDSHEAR','RCT','PRW'] #,'PRW','LWP','LCL','LFC','LNB']
+
 #vars       += ['SVT001','SVT002','SVT003','SVT004','SVT005','SVT006']
-vars       = ['RNPM']
+#vars       = ['PABST'] #['RNPM'] #,'THLM','THV','WT']
 
 #    With objects?
 objectchar = 1 #1
@@ -65,7 +70,7 @@ fluxes     = 0 #WT by default
 fluxchar   = 'WT'
 
 #    Which plots?
-plots0     = {'cross':0,'zview':0, 'mean':1}
+plots0     = {'cross':0,'zview':1, 'mean':0}
 
 # Average over +/-xx grid points for cross section
 avg        = 0
@@ -125,6 +130,8 @@ if objectchar:
   AddWT  = 1
 
   typs, objtyp = tl.def_object(thrs,nbplus=nbplus,AddWT=AddWT)
+  if case=='IHOP':
+     typs=[ij for ij in typs if '002' not in ij]
   
   if ~fluxes:
     vars += ['Frac']
@@ -255,34 +262,31 @@ mask     = []
 for typ in typs:
   print(typ)
   nameobj   = typ+'_'+thch
-  nameobjs += [nameobj] #updr_SVT001_WT_02
   try:
     dataobj   = DATA[nameobj][:] #tl.removebounds(DATA[nameobj])
     # current version
     #dataobjs[nameobj],nbr  = tl.do_delete2(dataobj,tl.do_unique(deepcopy(dataobj)),nbmin,rename=True)
+    
+    if case=='IHOP':
+        if '003' in nameobj:
+            nameobj=nameobj.replace('003','002')
     
     # new version (volume)
     tmpmask = tl.do_unique(deepcopy(dataobj))*nxnynz
     #print('tmpmask ',tmpmask[0,:,0])
     dataobjs[nameobj],nbr  = tl.do_delete2(dataobj,tmpmask,vmin,rename=True)
     
+              
     #print nbr,dataobjs[nameobj].shape,np.max(dataobjs[nameobj])
     mask.append(tl.do_unique(deepcopy(dataobjs[nameobj])))
   except:
     dataobjs[nameobj] = None
+    
+  nameobjs += [nameobj] #updr_SVT001_WT_02
   #mask.append(tl.do_unique(dataobjs[nameobj]))
   #print mask,dataobjs[nameobj]
   
-print('Keys 1 ',dataobjs.keys())
-print(DATA.keys())
-if 'RCT' not in DATA.keys():
-    for ij in dataobjs.keys():
-        if 'SVT002' in ij:
-          del(dataobjs[ij])           
-    dataobjs[dataobjs.keys().replace('003','002')] = dataobjs.pop()
-    nameobjs = dataobjs.keys()  
-print('Keys 2 ',dataobj.keys())
-
+ 
 if len(mask)>0: # and fluxes:
    nameobj   = 'All'
    nameobjs += [nameobj]

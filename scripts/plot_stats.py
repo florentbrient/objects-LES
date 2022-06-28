@@ -41,7 +41,12 @@ try:
   cond = sys.argv[9]
 except:
   cond = ''
+  
+#if cas=='IHOP':
+#   typ     = [typ[i] for i, e in enumerate(selSVT) if '002' not in e]
+#   selSVT  = [ij for ij in selSVT if '002' not in ij]
 
+print('iCI: ',selSVT,typ)
 subcloud,subprefix,nocloud,nocldprefix = tl.suffix_name(subcloud,nocloud)
 
 #hours     = ['002','004','006','008']
@@ -103,29 +108,35 @@ thch   = str(thrs).zfill(2)
 # By default : 0.02 km^3
   
 # Select by? 
-minchar = 'volume' #unit
-if minchar == 'volume':
-    vmin   = 0.02
-    suffixmin = '_vol'+str(vmin) 
-elif minchar == 'unit':
-    nbmin  = 100 #100 #1000
-    suffixmin = '_nb'+str(nbmin)
+#minchar = 'volume' #unit
+#if minchar == 'volume':
+#    vmin   = 0.02
+#    suffixmin = '_vol'+str(vmin) 
+#elif minchar == 'unit':
+#    nbmin  = 100 #100 #1000
+#    suffixmin = '_nb'+str(nbmin)
 nbplus = tl.svttyp(cas,simu) #1
 # Object based on tracer concentration AND vertical velocity?
 AddWT  = 1
 typs2, objtyp = tl.def_object(thrs,nbplus=nbplus,AddWT=AddWT)
-print('TT ',typs2)
 typs2 = [ij+'_'+thch  for ij in typs2] 
 #print(typs2,objtyp)
 typs2.append('All')
+print('TT ',typs2, typs)
 
 ############################
 
 print(typs,typs2)
-data = {}
+data     = {}
+nameobjs = []
+nameidx  = []
+if cas=='IHOP':
+  nameidx = [ij for ij in typs2 if '002' in ij]
+
 for it,typ in enumerate(typs2):
   print('color : ',typ)
   #print(tl.findhatch(typs2[it],typ='color'))
+  
   filein1a = filein0.replace('TT',typ_first[it])
   filein1b = filein1a.replace('SS',sel_first[it])   
   for ih,hh in enumerate(hours):
@@ -134,6 +145,7 @@ for it,typ in enumerate(typs2):
       filein = filein1c.replace('LL',str(ll));
       print(filein)
       tab,nametab,Nmin,Nval,ijmin  = openfilestat(filein)
+            
       if il==0 and ih==0:
           data[typ] = np.zeros((NH,NL,Nmin,Nval))
       #if it==0 and il==0 and ih==0:
@@ -141,9 +153,20 @@ for it,typ in enumerate(typs2):
         
       for ij in range(Nmin):
         for ik in range(Nval):
-          #data[it,ih,il,ij,ik]=float(tab[ijmin+ij][ik])
-          data[typ][ih,il,ij,ik]=float(tab[ijmin+ij][ik])
-          #print(ih,il,ij,ik,data[typ][ih,il,ij,ik])
+          if typ not in nameidx:
+            data[typ][ih,il,ij,ik]=float(tab[ijmin+ij][ik])
+      
+  # replace typs2
+  if typ not in nameidx:
+    nameobjs  += [typ]
+    
+if cas=='IHOP':
+    for ij in nameobjs:
+       data[ij.replace('003','002')] = data.pop(ij)
+    nameobjs = [ij.replace('003','002') for ij in nameobjs]
+
+print('HERE : ',nameobjs,data.keys())
+#stop
 
 # Info figure
 xxname=['time']
@@ -162,7 +185,7 @@ levelx['time']=range(0,int(hours[-1])+2*xx,xx)
 #if case == 'IHOP':
 #  levelx['time']=range(0,12+2,2)
 if cas == 'BOMEX':
-  levelx['time']=range(0,16+2,2)
+  levelx['time']=range(0,14+2,2)
 if cas == 'ARMCU':
   levelx['time']=range(0,12+2,2)
 
@@ -173,8 +196,8 @@ datax = np.repeat(datax,1,axis=0).reshape((1,NH))
 
 #Nmax   = len(typs2)-1 #typs.index('downdraftorupdraft')
 #idx     = Nmax
-Nmax   = typs2[:-1]
-idx    = typs2[-1]
+Nmax   = nameobjs[:-1]
+idx    = nameobjs[-1]
 print('Nmax ',Nmax)
 
 # Which m you want to plot (m=1, index 2)
@@ -223,7 +246,7 @@ for xx,xlab in enumerate(xxname):
         
         filesave = namefile3
         
-        mf.plotstats(typs2,datax,datay,filesave=filesave,xlab=xlab,ylab=ylab,\
+        mf.plotstats(nameobjs,datax,datay,filesave=filesave,xlab=xlab,ylab=ylab,\
                      unitx=unitx[xx],xaxis=levelx,yaxis=levely,\
                      mins=mins,extrax=extrax,extray=extray)
 
