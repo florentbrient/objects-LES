@@ -539,6 +539,20 @@ def cond2plot(case,prefix,boxch=False):
      xy = np.array(xydef)
    return boxes,xy
 
+# find subdomain
+def findsubdom(cas,hour):
+   subdom = {}
+   subdom = {'IHOP':  {'006':([40,200],[280,440])},\
+             'BOMEX': {'006':([40,200],[280,440]),
+                       '008':([200,360],[280,440])}\
+             }
+   yy = None
+   if cas in subdom.keys():
+       xx = subdom[cas]
+       if hour in xx.keys():
+           yy = np.array(xx[hour])
+   return yy  
+
 # Infos for figures
 def infosfigures(cas, var, mtyp='Mean'):
    cmaps = {'Mean':'PuBu_r','Anom':'RdBu_r'} 
@@ -559,7 +573,6 @@ def infosfigures(cas, var, mtyp='Mean'):
                     'THLM' :[-1.0,1.0,0.02],
                     'RNPM' :[-0.002,0.002,0.0001]
                     }
-
    zminmax = None
    if cas in zmax.keys():
      zminmax=[zmin,zmax[cas]]

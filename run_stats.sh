@@ -28,7 +28,7 @@ hours=$3
 name='V0301'
 svt=($4 $5 $6)
 
-subcloud=1
+subcloud=0
 cloud=0
 sum='or'
 
@@ -59,31 +59,4 @@ python stats_flux.py $typ $trac $sens $hour $case $name $subcloud $cloud $sum
 done
 done
 
-
-typs=(updraft)
-tracer=${svt[0]}_WT
-for typ in "${typs[@]}"
-do
-for hour in "${hours[@]}"
-do
-echo '1'
-echo $PWD
-echo $tracer
-#python stats_flux.py $typ $tracer $sens $hour $case $name $subcloud $cloud
-done
-done
-
-
-typs=(updraft,downdraft,downdraft,downdraft)
-tracer=${svt[0]}_WT,${svt[0]}_WT,${svt[1]}_WT,${svt[2]}_WT
-for typ in "${typs[@]}"
-do
-for hour in "${hours[@]}"
-do
-echo 'All'
-echo $PWD
-echo $tracer
-#python stats_flux.py $typ $tracer $sens $hour $case $name $subcloud $cloud 'or'
-done
-done
 

@@ -14,7 +14,8 @@ import Constants as CC
 
 def main(data1D,data,plots,dataobjs,xy=None,zview=[],\
          pathfig='.',nametitle='',\
-         avg=0,fluxes=0,idxzi2D=None,relative=None):
+         avg=0,fluxes=0,idxzi2D=None,relative=None,
+         subdom=False):
     if __name__== "__main__" :
       print('ok')
       title='_'.join(data.keys())
@@ -30,15 +31,14 @@ def main(data1D,data,plots,dataobjs,xy=None,zview=[],\
         mf.plot2D(data1D,data,dataobjs,xy=xy,pathfig=pathfig,nametitle=nametitle,avg=avg,hatchlog=hchcross,idxzi2D=idxzi2D)
 
       if plots['zview']:
-        subdom = None 
-        #subdom    = np.array(([40,200],[280,440]))          
         for zz in zview:
           mf.plot2D(data1D,data,dataobjs,subdom=subdom,zz=zview[zz],\
                     pathfig=pathfig,nametitle=nametitle+'_'+zz,\
                     avg=avg,hatchlog=hchzview)
 
       if plots['mean']:
-        mf.plotmean(data1D,data,dataobjs=dataobjs,zz=zview,pathfig=pathfig,nametitle=nametitle,fluxes=fluxes) #,relative=relative)
+        mf.plotmean(data1D,data,dataobjs=dataobjs,zz=zview,\
+                    pathfig=pathfig,nametitle=nametitle,fluxes=fluxes) #,relative=relative)
       
 
 
@@ -57,13 +57,13 @@ vtype   = sys.argv[5] #V0301
 ##################################################
 #    Variables of interest
 #vars       = ['Reflectance','LWP','WT','UT','VT','PABST','THV','THT','RNPM','RVT','THLM','DIVUV','REHU','WINDSHEAR','RCT','PRW'] #,'PRW','LWP','LCL','LFC','LNB']
-vars       = ['REHU','WINDSHEAR','RCT','PRW'] #,'PRW','LWP','LCL','LFC','LNB']
-
+#vars       = ['REHU','WINDSHEAR','RCT','PRW'] #,'PRW','LWP','LCL','LFC','LNB']
 #vars       += ['SVT001','SVT002','SVT003','SVT004','SVT005','SVT006']
-#vars       = ['PABST'] #['RNPM'] #,'THLM','THV','WT']
+vars       = ['Reflectance','PRW'] #['RNPM'] #,'THLM','THV','WT']
+
 
 #    With objects?
-objectchar = 1 #1
+objectchar = 0 #1
 
 #    Fluxes?
 fluxes     = 0 #WT by default
@@ -77,6 +77,10 @@ avg        = 0
 
 # Relative for mean profile (not used so far)
 relative   = None #['y']
+
+# subdom for zview
+subdom     = False
+
 ##################################################
 
 ### Source Path
@@ -93,6 +97,12 @@ boxes,xy  = tl.cond2plot(case,prefix,boxch=boxch)
 
 ### Open file
 #path    = path0
+
+#### subdom
+if subdom:
+    subdom = tl.findsubdom(case,prefix)
+print(subdom)
+#stop
 
 # Name
 filename = 'sel_'+sens+".1."+vtype+"."+prefix
@@ -117,7 +127,7 @@ if objectchar:
   # Select by?
   minchar = 'volume' #unit
   if minchar == 'volume':
-      vmin   = 0.02 # by default
+      vmin   = 0.02 # by default (km^3)
       #vmin   = 0
       suffixmin = '_vol'+str(vmin)
   elif minchar == 'unit':
@@ -347,7 +357,8 @@ for vv in vars:
     nametitle = nametitle0.format(var=vv,objch=objch,vtypch=vtypch,suffix=prefix)
     main(data1D,data,plots,dataobjs,xy=xy,zview=zview,\
          pathfig=pathfig,nametitle=nametitle,\
-         avg=avg,fluxes=fluxes,idxzi2D=idxzi2D,relative=relative)
+         avg=avg,fluxes=fluxes,idxzi2D=idxzi2D,relative=relative,
+         subdom=subdom)
 
 
 

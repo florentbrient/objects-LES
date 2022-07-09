@@ -12,9 +12,12 @@ path=`pwd`
 
 svt=(SVT001 SVT002 SVT003)
 
-#case='IHOP';sens='Ru0x0';hour=('006',) #('002','004','006','008')
-case='BOMEX';sens='Ru0x0';hour=('006',) #hour=('002','004','006','008','010','012')
+#case='IHOP';sens='Ru0x0';hour=('002','004','006','008')
+case='BOMEX';sens='Ru0x0';hour=('002','004','006','008','010','012')
 #case='FIRE';sens='Ls2x0';svt=(SVT004 SVT005 SVT006);hour=('003','006','009','012','015','018','021','024')
+#case='BOMEX';sens='Ru0NW';hour=('008','012',) #hour=('002','004','006','008','010','012')
+
+
 
 #case='IHOP' #'AYOTTE' #'RICO' #'IHOP' #'BOMEX' 'FIRE' 'ARMCU'
 #sens='Ru0x0' #'24Sx0' #'Ru0x0' #'L2RA2' 'Ls2x0' 'LNOCF' 'Ru0NC' 'Ru0x0'
@@ -40,7 +43,7 @@ do
   file=${path}/data/${case}/${sens}/sel_${sens}.1.V0301.${hh}.nc4
   python identify_downdrafts_and_updrafts.py updraft   ${svt[0]}+WT $file
   python identify_downdrafts_and_updrafts.py downdraft ${svt[0]}+WT $file
-  python identify_downdrafts_and_updrafts.py updraft   ${svt[1]}+WT $file
+  #python identify_downdrafts_and_updrafts.py updraft   ${svt[1]}+WT $file
   python identify_downdrafts_and_updrafts.py downdraft ${svt[1]}+WT $file
   python identify_downdrafts_and_updrafts.py downdraft ${svt[2]}+WT $file
 done

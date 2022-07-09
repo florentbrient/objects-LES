@@ -1,14 +1,14 @@
 from collections import OrderedDict
 
 infocas  = OrderedDict()
-#infocas['FIRE']    = {'sens':'Ls2x0','hour':('006','012','018','024',),'vmin':800 ,'color':'orange','dxdy':50,'svt':True,'cas':'FIRE'}
-infocas['FIRE']    = {'sens':'Ls2x0','hour':('024',),'vmin':800 ,'color':'orange','dxdy':50,'svt':True,'cas':'FIRE'}
+#infocas['FIRE']    = {'sens':'Ls2x0','hour':('012','021',),'vmin':800 ,'color':'orange','dxdy':50,'svt':True,'cas':'FIRE'}
+infocas['FIRE']    = {'sens':'Ls2x0','hour':('021',),'vmin':800 ,'color':'orange','dxdy':50,'svt':True,'cas':'FIRE'}
 #infocas['AYOT24S']  = {'sens':'24Sx0','hour':('006',),'vmin':3200,'color':'gray','dxdy':25,'svt':True,'cas':'AYOTTE'}
 infocas['IHOP']    = {'sens':'Ru0x0','hour':('006',),'vmin':3200,'color':'g','dxdy':25} #,'006','008',
 #infocas['ARMCU']   = {'sens':'Ru0x0','hour':('006','008','010',),'vmin':3200,'color':'k','dxdy':25}
 infocas['BOMEX']   = {'sens':'Ru0x0','hour':('008',),'vmin':3200,'color':'r','dxdy':25} #'004','006','008',
-infocas['BOMEXNW']   = {'sens':'Ru0NW','hour':('008',),'vmin':3200,'color':'r','dxdy':25,'cas':'BOMEX', 'style':'--'} #'004','006','008',
-infocas['BOMEXNC']   = {'sens':'Ru0NC','hour':('008',),'vmin':3200,'color':'r','dxdy':25,'cas':'BOMEX', 'style':':'} #'004','006','008',
+#infocas['BOMEXNW']   = {'sens':'Ru0NW','hour':('008',),'vmin':3200,'color':'r','dxdy':25,'cas':'BOMEX', 'style':'--'} #'004','006','008',
+#infocas['BOMEXNC']   = {'sens':'Ru0NC','hour':('008',),'vmin':3200,'color':'r','dxdy':25,'cas':'BOMEX', 'style':':'} #'004','006','008',
 #infocas['RICO']    = {'sens':'Ru0x0','hour':('008','012',),'vmin':3200,'color':'b','dxdy':25}
 #infocas['ASTEX']   = {'sens':'BIG07','hour':('006','010','014','018',),'vmin':50,'color':'c','dxdy':160,'cas':'ASTEX'}
 #infocas['FIREnoc'] = {'sens':'LNOCF','hour':('006','012',),'vmin':800 ,'color':'y','marker':'s','dxdy':50,'cas':'FIRE'}

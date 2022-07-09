@@ -1,7 +1,7 @@
 #import netCDF4 as nc
 import pylab as plt
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib as mpl
 #import matplotlib.colors as colors
 import numpy as np 
@@ -216,7 +216,7 @@ def plotmean(data1D,data,dataobjs={},zz=None,pathfig='./',nametitle=None,fluxes=
 
 
 # cross
-def plot2D(data1D,data,dataobjs,xy=None,zz=None,subdom=None,pathfig='./'\
+def plot2D(data1D,data,dataobjs,xy=None,zz=None,subdom=False,pathfig='./'\
            ,nametitle=None,avg=0,hatchlog=False,idxzi2D=None):
     # Plot cross section
     #      z-view
@@ -321,9 +321,9 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,subdom=None,pathfig='./'\
               x0 = [ij+xy[1,0] for ij in x0]
           #if zz is not None:
           #    y0 = [ij+xy[1,0] for ij in y0]
-      print('x0 ',x0,y0)
+      #print('x0 ',x0,y0)
       xx, yy = np.meshgrid(x0,y0)
-      print('x0 ',xx,yy)
+      #print('x0 ',xx,yy)
 
       cmap = cmaps['Mean']
       norm = None
@@ -361,7 +361,7 @@ def plot2D(data1D,data,dataobjs,xy=None,zz=None,subdom=None,pathfig='./'\
 
       if zminmax is not None:
          ax.set_ylim(zminmax)
-      if subdom is not None:
+      if subdom:
          ss=subdom
          ax.set_xlim(zyx[2][ss[0,:]])
          ax.set_ylim(zyx[1][ss[1,:]])

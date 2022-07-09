@@ -93,14 +93,16 @@ def main(dirin,dirout,infocas,var0,relx,rely):
           title+='_relx'
       if rely:
           title+='_rely'
+          zmax = 2
+          ax.set_ylim([0,zmax])
       xsize  = (8,10)
       mf.savefig(fig,ax,dirout,title=title,xsize=xsize)
 
 
 dirin   = "../data/"
 dirout  = "../data/d_unif/"
-relx    = False 
-rely    = False
-vars   = ['REHU'] #['NNV','THLM','RNPM','THV','W_VAR','W2','RHO','THT','REHU','THS2','THS1','MSE','CLDFR','RCT','SVT001','SVT002','SVT003','WINDSHEAR','TA','N']
+relx    = True 
+rely    = True
+vars   = ['THV'] #['NNV','THLM','RNPM','THV','W_VAR','W2','RHO','THT','REHU','THS2','THS1','MSE','CLDFR','RCT','SVT001','SVT002','SVT003','WINDSHEAR','TA','N']
 for var in vars:
   main(dirin,dirout,infocas,var,relx,rely)
